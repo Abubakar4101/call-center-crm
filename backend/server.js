@@ -38,6 +38,13 @@ app.post(
 app.use(express.json());
 app.use("/assets/profile-pics", express.static(path.join(__dirname, "assets/profile-pics")));
 
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ 
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+    });
+});
 app.use('/api/auth', authRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/stripe', stripeRoutes);
