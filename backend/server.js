@@ -3,7 +3,8 @@ require('./src/config/db')
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
-const { Server } = require('socket.io');
+// const { Server } = require('socket.io');
+const serverless = require('serverless-http');
 const path = require('path')
 
 const stripeController = require('./src/controllers/stripeController')
@@ -21,9 +22,9 @@ const driverRoutes = require("./src/routes/driverRoutes");
 
 
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: process.env.FRONTEND_URL || '*' } });
-app.set('io', io);
+// const server = http.createServer(app);
+// const io = new Server(server, { cors: { origin: process.env.FRONTEND_URL || '*' } });
+// app.set('io', io);
 
 
 app.use(cors());
@@ -49,10 +50,10 @@ app.use("/api/drivers", driverRoutes);
 
 
 
-io.on('connection', (socket) => {
-    socket.on('joinTenant', (tenantId) => socket.join(String(tenantId)));
-});
+// io.on('connection', (socket) => {
+//     socket.on('joinTenant', (tenantId) => socket.join(String(tenantId)));
+// });
 
 
 // server.listen(process.env.PORT || 5000, () => console.log('Server started'));
-module.exports = server;
+module.exports = serverless(app);
