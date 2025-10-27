@@ -1,0 +1,38 @@
+{
+  "name": "Google Voice Assistant",
+  "version": "0.1.0",
+  "description": "make your numbers file hanlding task easy....",
+  "permissions": ["storage", "tabs", "cookies"],
+  "host_permissions": ["https://voice.google.com/*", "http://localhost:5000/*", "https://*/api/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://voice.google.com/*"],
+      "js": ["content-script.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/bookmark.png",
+        "assets/play.png",
+        "assets/delete.png",
+        "assets/save.png"
+      ],
+      "matches": ["https://voice.google.com/*"]
+    }
+  ],
+  "action": {
+    "default_icon": {
+      "16": "assets/icon.png",
+      "24": "assets/icon.png",
+      "32": "assets/icon.png"
+    },
+    "default_title": "Google Voice Assistant",
+    "default_popup": "popup.html"
+  },
+  "manifest_version": 3
+}

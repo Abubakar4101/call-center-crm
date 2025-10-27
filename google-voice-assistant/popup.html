@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>CSV Uploader</title>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script> -->
+    <link rel="stylesheet" href="popup.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <h3>Upload CSV File</h3>
+    <input type="file" id="csvFile" accept=".csv" />
+    <input type="text" id="searchInput" placeholder="Search by name" />
+    <button id="searchButton" type="button">Search</button>
+    <ul id="output"></ul>
+    <form id="indexInputContainer" class="hidden">
+      <p>Row Being Read:</p>
+      <input type="number" id="indexInput" placeholder="Enter index" />
+      <button id="indexSubmit">Submit</button>
+    </form>
+    <script src="jquery.min.js"></script>
+    <script src="papaparse.min.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

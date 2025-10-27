@@ -1,0 +1,10 @@
+user
+1:signup 2:login 3:already logged in directly redirect to Landing Page
+
+Landing Page
+1:contact us.  2:review us.  3:Menu,
+
+
+from Menu. 
+1:Add to cart,
+2:see details of item.
