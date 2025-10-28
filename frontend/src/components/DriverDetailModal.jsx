@@ -208,15 +208,45 @@ const DriverDetailModal = ({ isOpen, onClose, driver }) => {
             {/* Compliance Documents */}
             <div className="bg-gray-700 p-4 rounded-lg">
               <h4 className="text-lg font-semibold text-white mb-3">Compliance Documents</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {Object.entries(driver.complianceDocuments || {}).map(([key, value]) => (
-                  <div key={key} className="flex items-center space-x-2">
-                    <div className={`w-3 h-3 rounded-full ${value ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                    <span className="text-sm text-gray-300 capitalize">
-                      {key.replace(/([A-Z])/g, ' $1').trim()}
-                    </span>
-                  </div>
-                ))}
+              <div className="space-y-3">
+                {[
+                  { key: 'mcAuthority', label: 'Copy of MC Authority' },
+                  { key: 'insuranceCertificate', label: 'Copy of Insurance Certificate' },
+                  { key: 'w9Form', label: 'Copy of W-9 Form' },
+                  { key: 'noa', label: 'Copy of NOA (Notice of Assignment)' },
+                  { key: 'dispatchServiceAgreement', label: 'Signed Dispatch Service Agreement' },
+                  { key: 'cdlCopy', label: 'Copy of CDL' },
+                  { key: 'medicalCard', label: 'Medical Card' },
+                  { key: 'drugTestResults', label: 'Drug Test Results' }
+                ].map(doc => {
+                  const hasDocument = driver.complianceDocuments?.[doc.key];
+                  const documentUrl = driver.documents?.[`${doc.key}Url`];
+                  
+                  return (
+                    <div key={doc.key} className="flex items-center justify-between p-3 bg-gray-600 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-3 h-3 rounded-full ${hasDocument && documentUrl ? 'bg-green-500' : 'bg-red-600'}`}></div>
+                        <span className="text-gray-300">{doc.label}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {hasDocument && documentUrl ? (
+                          <button
+                            onClick={() => window.open(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}${documentUrl}`, '_blank')}
+                            className="p-2 text-blue-400 hover:text-blue-300 hover:bg-gray-500 rounded-lg transition-colors"
+                            title="View Document"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          </button>
+                        ) : (
+                          <span className="text-gray-500 text-sm">No document</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 

@@ -81,6 +81,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
 
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [uploadingDocuments, setUploadingDocuments] = useState({});
   const { success, error } = useToast();
 
   const SERVER_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -209,11 +210,54 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
       ...prev,
       [section]: {
         ...prev[section],
-        [field]: checked 
+        [field]: checked
           ? [...prev[section][field], value]
           : prev[section][field].filter(item => item !== value)
       }
     }));
+  };
+
+  const handleDocumentUpload = async (documentType, file) => {
+    if (!driverToEdit) {
+      error('Please save the driver first before uploading documents');
+      return;
+    }
+
+    setUploadingDocuments(prev => ({ ...prev, [documentType]: true }));
+
+    try {
+      const formData = new FormData();
+      formData.append('document', file);
+      formData.append('documentType', documentType);
+
+      const response = await fetch(`${SERVER_URL}/drivers/${driverToEdit._id}/upload`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        success(`${documentType} uploaded successfully!`);
+        // Update the form data with the uploaded document
+        setFormData(prev => ({
+          ...prev,
+          complianceDocuments: {
+            ...prev.complianceDocuments,
+            [documentType]: true
+          }
+        }));
+      } else {
+        error(data.error || data.message || 'Failed to upload document');
+      }
+    } catch (err) {
+      error('Failed to upload document');
+    } finally {
+      setUploadingDocuments(prev => ({ ...prev, [documentType]: false }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -235,7 +279,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         success(isEdit ? 'Driver updated successfully!' : 'Driver registered successfully!');
         onSuccess();
@@ -262,7 +306,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
   const nextStep = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    setCurrentStep(prev => Math.min(prev + 1, 6))
+    setCurrentStep(prev => Math.min(prev + 1, 7))
   };
   const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 1));
 
@@ -332,7 +376,12 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
   };
 
   const isStep6Valid = () => {
-    // Step 6 (Compliance Documents) - at least one document should be checked
+    // Step 6 (Document Uploads) - optional step, always valid
+    return true;
+  };
+
+  const isStep7Valid = () => {
+    // Step 7 (Compliance Documents) - at least one document should be checked
     const { complianceDocuments } = formData;
     return Object.values(complianceDocuments).some(checked => checked === true);
   };
@@ -345,6 +394,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
       case 4: return isStep4Valid();
       case 5: return isStep5Valid();
       case 6: return isStep6Valid();
+      case 7: return isStep7Valid();
       default: return false;
     }
   };
@@ -370,13 +420,13 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
           {/* Progress Bar */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-400">Step {currentStep} of 6</span>
-              <span className="text-sm text-gray-400">{Math.round((currentStep / 6) * 100)}%</span>
+              <span className="text-sm text-gray-400">Step {currentStep} of 7</span>
+              <span className="text-sm text-gray-400">{Math.round((currentStep / 7) * 100)}%</span>
             </div>
             <div className="w-full bg-gray-700 rounded-full h-2">
-              <div 
+              <div
                 className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${(currentStep / 6) * 100}%` }}
+                style={{ width: `${(currentStep / 7) * 100}%` }}
               ></div>
             </div>
           </div>
@@ -386,7 +436,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
             {currentStep === 1 && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-white mb-4">1. Carrier Information</h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Company Name *</label>
@@ -496,7 +546,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
             {currentStep === 2 && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-white mb-4">2. Owner/Driver Information</h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Full Name *</label>
@@ -583,7 +633,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
             {currentStep === 3 && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-white mb-4">3. Truck & Equipment Information</h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Truck Type *</label>
@@ -713,7 +763,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
             {currentStep === 4 && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-white mb-4">4. Payment/Billing Information</h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Dispatch Fee (%) *</label>
@@ -790,7 +840,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
             {currentStep === 5 && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-white mb-4">5. Preferences</h3>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Preferred Routes</label>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -869,11 +919,74 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
               </div>
             )}
 
-            {/* Step 6: Compliance Documents */}
+            {/* Step 6: Document Uploads */}
             {currentStep === 6 && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-white mb-4">6. Compliance Documents Checklist</h3>
-                
+                <h3 className="text-lg font-semibold text-white mb-4">6. Document Uploads</h3>
+                <p className="text-gray-400 mb-4">Upload the required compliance documents. You can upload documents after saving the driver.</p>
+
+                <div className="space-y-4">
+                  {[
+                    { key: 'mcAuthority', label: 'Copy of MC Authority', required: true },
+                    { key: 'insuranceCertificate', label: 'Copy of Insurance Certificate', required: true },
+                    { key: 'w9Form', label: 'Copy of W-9 Form', required: true },
+                    { key: 'noa', label: 'Copy of NOA (Notice of Assignment)', required: true },
+                    { key: 'dispatchServiceAgreement', label: 'Signed Dispatch Service Agreement', required: true },
+                    { key: 'cdlCopy', label: 'Copy of CDL', required: true },
+                    { key: 'medicalCard', label: 'Medical Card', required: true },
+                    { key: 'drugTestResults', label: 'Drug Test Results', required: true }
+                  ].map(doc => (
+                    <div key={doc.key} className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-3 h-3 rounded-full ${formData.complianceDocuments[doc.key] ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                        <span className="text-gray-300">{doc.label}</span>
+                        {doc.required && <span className="text-red-400 text-sm">*</span>}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              handleDocumentUpload(doc.key, file);
+                            }
+                          }}
+                          disabled={uploadingDocuments[doc.key] || !driverToEdit}
+                          className="hidden"
+                          id={`upload-${doc.key}`}
+                        />
+                        <label
+                          htmlFor={`upload-${doc.key}`}
+                          className={`px-3 py-1 text-sm rounded cursor-pointer ${uploadingDocuments[doc.key]
+                              ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                              : !driverToEdit
+                                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                            }`}
+                        >
+                          {uploadingDocuments[doc.key] ? 'Uploading...' : 'Upload'}
+                        </label>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {!driverToEdit && (
+                  <div className="mt-4 p-4 bg-yellow-900/20 border border-yellow-600 rounded-lg">
+                    <p className="text-yellow-400 text-sm">
+                      <strong>Note:</strong> You need to save the driver first before uploading documents. Complete the registration and then edit the driver to upload documents.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Step 7: Compliance Documents */}
+            {currentStep === 7 && driverToEdit && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-white mb-4">7. Compliance Documents Checklist</h3>
+
                 <div className="space-y-3">
                   {[
                     { key: 'mcAuthority', label: 'Copy of MC Authority' },
@@ -909,9 +1022,13 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
               >
                 Previous
               </button>
-              
+
               <div className="flex space-x-2">
-                {currentStep < 6 ? (
+                {(
+                  (!driverToEdit && currentStep < 6)
+                ) || (
+                    (driverToEdit && currentStep < 7)
+                  ) ? (
                   <button
                     type="button"
                     onClick={nextStep}
@@ -926,10 +1043,17 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
                     disabled={loading || !isCurrentStepValid()}
                     className="px-4 cursor-pointer py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? (driverToEdit ? 'Updating...' : 'Registering...') : (driverToEdit ? 'Update Driver' : 'Register Driver')}
+                    {loading
+                      ? driverToEdit
+                        ? 'Updating...'
+                        : 'Registering...'
+                      : driverToEdit
+                        ? 'Update Driver'
+                        : 'Register Driver'}
                   </button>
                 )}
               </div>
+
             </div>
           </form>
         </div>
