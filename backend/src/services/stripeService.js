@@ -4,7 +4,7 @@ const Payment = require('../models/Payment');
 
 async function createCheckoutSession({ tenantId, amount, currency, customer_email, title }) {
     const amountInCents = Math.round(amount * 100);
-    return stripe.checkout.sessions.create({
+    const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         mode: 'payment',
         line_items: [{
@@ -25,6 +25,18 @@ async function createCheckoutSession({ tenantId, amount, currency, customer_emai
             currency: String(currency || 'usd'),
         }
     });
+
+    await Payment.create({
+        tenant: tenantId,
+        stripePaymentId: session.id,
+        amount: amountInCents / 100, // store in normal currency format (e.g. 10.50)
+        currency: currency || 'usd',
+        customer_email,
+        status: session.payment_status || 'pending',
+        metadata: session.metadata,
+    });
+
+    return session;
 }
 
 
@@ -32,15 +44,11 @@ async function handleStripeWebhook(event, io) {
     console.log(event.type)
     if (event.type === 'checkout.session.completed') {
         const session = event.data.object;
-        const pay = await Payment.create({
-            tenant: session.metadata.tenantId,
-            stripePaymentId: session.payment_intent || session.id,
-            amount: session.amount_total,
-            currency: session.currency,
-            customer_email: session.customer_details.email || session.customer_email,
-            status: 'completed',
-            metadata: session.metadata
-        });
+        const pay = await Payment.findOneAndUpdate(
+            { stripePaymentId: session.id },
+            { status: 'paid' },
+            { new: true }
+        );
         if (io) io.to(String(pay.tenant)).emit('payment.created', pay);
     }
 }

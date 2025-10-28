@@ -53,8 +53,9 @@ class ApiService {
   }
 
   // Staff APIs
-  async getStaff() {
-    const response = await fetch(`${this.baseURL}/staff`, {
+  async getStaff(filters = {}) {
+    const queryString = new URLSearchParams(filters).toString();
+    const response = await fetch(`${this.baseURL}/staff${queryString ? `?${queryString}` : ''}`, {
       method: "GET",
       headers: this.getAuthHeaders(),
     });

@@ -17,10 +17,22 @@ export default function StaffPage() {
     permissions: [],
   });
 
-  const fetchStaff = async () => {
+  // Filter states
+  const [filters, setFilters] = useState({
+    search: "",
+    minCallsMade: "",
+    maxCallsMade: "",
+    minCallsReceived: "",
+    maxCallsReceived: "",
+    callDateFrom: "",
+    callDateTo: "",
+  });
+  const [showFilters, setShowFilters] = useState(false);
+
+  const fetchStaff = async (filterParams = {}) => {
     try {
       setLoading(true);
-      const staffData = await apiService.getStaff();
+      const staffData = await apiService.getStaff(filterParams);
       setStaff(staffData);
     } catch (err) {
       console.error("Failed to fetch staff:", err);
@@ -48,6 +60,31 @@ export default function StaffPage() {
           : [...prev.permissions, perm],
       };
     });
+  };
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({ ...prev, [name]: value }));
+  };
+
+  const applyFilters = () => {
+    const activeFilters = Object.fromEntries(
+      Object.entries(filters).filter(([_, value]) => value !== "")
+    );
+    fetchStaff(activeFilters);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      search: "",
+      minCallsMade: "",
+      maxCallsMade: "",
+      minCallsReceived: "",
+      maxCallsReceived: "",
+      callDateFrom: "",
+      callDateTo: "",
+    });
+    fetchStaff();
   };
 
   const handleSubmit = async (e) => {
@@ -100,37 +137,190 @@ export default function StaffPage() {
             Manage your team members and their access
           </p>
         </div>
-        <button
-          onClick={() => {
-            setEditStaff(null);
-            setFormData({
-              name: "",
-              email: "",
-              role: "",
-              phone: "",
-              password: "",
-              permissions: []
-            });
-            setShowForm(true);
-          }}
-          className="btn btn-primary w-full sm:w-auto"
-        >
-          <svg
-            className="w-4 h-4 lg:w-5 lg:h-5 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="btn btn-secondary w-full sm:w-auto"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-            />
-          </svg>
-          Add Staff Member
-        </button>
+            <svg
+              className="w-4 h-4 lg:w-5 lg:h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z"
+              />
+            </svg>
+            Filters
+          </button>
+          <button
+            onClick={() => {
+              setEditStaff(null);
+              setFormData({
+                name: "",
+                email: "",
+                role: "",
+                phone: "",
+                password: "",
+                permissions: []
+              });
+              setShowForm(true);
+            }}
+            className="btn btn-primary w-full sm:w-auto"
+          >
+            <svg
+              className="w-4 h-4 lg:w-5 lg:h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
+            </svg>
+            Add Staff Member
+          </button>
+        </div>
       </div>
+
+      {/* Search and Filters */}
+      {showFilters && (
+        <div className="card">
+
+          <div className="card-body">
+            <h4 className="text-sm font-medium text-gray-300 pb-4">Advanced Filters</h4>
+
+            {/* Search Bar */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <svg
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                  <input
+                    type="text"
+                    name="search"
+                    value={filters.search}
+                    onChange={handleFilterChange}
+                    placeholder="Search by name, email, or role..."
+                    className="form-input pl-10"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Advanced Filters */}
+
+            <div className="border-t border-gray-700 pt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Call Metrics */}
+                <div>
+                  <label className="form-label text-xs">Min Calls Made</label>
+                  <input
+                    type="number"
+                    name="minCallsMade"
+                    value={filters.minCallsMade}
+                    onChange={handleFilterChange}
+                    className="form-input"
+                    placeholder="0"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="form-label text-xs">Max Calls Made</label>
+                  <input
+                    type="number"
+                    name="maxCallsMade"
+                    value={filters.maxCallsMade}
+                    onChange={handleFilterChange}
+                    className="form-input"
+                    placeholder="100"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="form-label text-xs">Min Calls Received</label>
+                  <input
+                    type="number"
+                    name="minCallsReceived"
+                    value={filters.minCallsReceived}
+                    onChange={handleFilterChange}
+                    className="form-input"
+                    placeholder="0"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="form-label text-xs">Max Calls Received</label>
+                  <input
+                    type="number"
+                    name="maxCallsReceived"
+                    value={filters.maxCallsReceived}
+                    onChange={handleFilterChange}
+                    className="form-input"
+                    placeholder="100"
+                    min="0"
+                  />
+                </div>
+
+                {/* Date Filters */}
+                <div>
+                  <label className="form-label text-xs">Call Date From</label>
+                  <input
+                    type="date"
+                    name="callDateFrom"
+                    value={filters.callDateFrom}
+                    onChange={handleFilterChange}
+                    className="form-input"
+                  />
+                </div>
+                <div>
+                  <label className="form-label text-xs">Call Date To</label>
+                  <input
+                    type="date"
+                    name="callDateTo"
+                    value={filters.callDateTo}
+                    onChange={handleFilterChange}
+                    className="form-input"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end mt-5 gap-4">
+              <button
+                onClick={clearFilters}
+                className="btn btn-secondary"
+              >
+                Clear
+              </button>
+              <button
+                onClick={applyFilters}
+                className="btn btn-primary"
+              >
+                Apply
+              </button>
+
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Staff List */}
       <div className="card">

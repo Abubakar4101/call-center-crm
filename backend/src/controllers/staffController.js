@@ -13,7 +13,7 @@ exports.addStaff = async(req, res) => {
 
 exports.listStaff = async(req, res) => {
     try {
-        const staff = await staffService.getStaffList(req.user.tenantId);
+        const staff = await staffService.getStaffList(req.user.tenantId, req.query);
         res.json(staff);
     } catch (err) {
         res.status(500).json({ message: err.message });

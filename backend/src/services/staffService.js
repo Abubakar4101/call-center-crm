@@ -21,8 +21,45 @@ async function createStaff(tenantId, data, createdBy) {
     });
 }
 
-async function getStaffList(tenantId) {
-    return Staff.find({ tenant: tenantId }).sort({ createdAt: -1 });
+async function getStaffList(tenantId, filters = {}) {
+    const query = { tenant: tenantId };
+    
+    // Add search functionality
+    if (filters.search) {
+        query.$or = [
+            { name: { $regex: filters.search, $options: 'i' } },
+            { email: { $regex: filters.search, $options: 'i' } },
+            { role: { $regex: filters.search, $options: 'i' } }
+        ];
+    }
+    
+    // Add call metrics filtering
+    if (filters.minCallsMade !== undefined) {
+        query.callsMade = { $gte: parseInt(filters.minCallsMade) };
+    }
+    if (filters.maxCallsMade !== undefined) {
+        query.callsMade = { ...query.callsMade, $lte: parseInt(filters.maxCallsMade) };
+    }
+    if (filters.minCallsReceived !== undefined) {
+        query.callsReceived = { $gte: parseInt(filters.minCallsReceived) };
+    }
+    if (filters.maxCallsReceived !== undefined) {
+        query.callsReceived = { ...query.callsReceived, $lte: parseInt(filters.maxCallsReceived) };
+    }
+    
+    // Add date filtering for calls
+    if (filters.callDateFrom || filters.callDateTo) {
+        const dateQuery = {};
+        if (filters.callDateFrom) {
+            dateQuery.$gte = new Date(filters.callDateFrom);
+        }
+        if (filters.callDateTo) {
+            dateQuery.$lte = new Date(filters.callDateTo);
+        }
+        query.createdAt = dateQuery;
+    }
+    
+    return Staff.find(query).sort({ createdAt: -1 });
 }
 
 async function updateStaff(tenantId, staffId, data) {

@@ -88,22 +88,10 @@ export default function PaymentsPage() {
 
       // Set the checkout link from backend response
       setCheckoutLink(response.url);
-
-      // Add new payment to the list (pending status until webhook updates it)
-      const newPayment = {
-        _id: Date.now().toString(),
-        stripePaymentId: `pi_${Date.now()}${Math.random()
-          .toString(36)
-          .substr(2, 9)}`,
-        customer_email: paymentFormData.customerEmail,
-        amount: Number(paymentFormData.amount),
-        currency: "usd",
-        status: "pending",
-        createdAt: new Date().toISOString(),
-      };
-
-      setPayments((prev) => [newPayment, ...prev]);
-      setTotalCount((prev) => prev + 1);
+      success("Checkout link created successfully! Payment will appear in the list once completed.");
+      
+      // Don't add temporary payment - wait for webhook to create real payment
+      // The payment will appear in the list when the user completes the checkout
     } catch (err) {
       console.error(err);
       error("Server error, please try again.");
@@ -130,29 +118,83 @@ export default function PaymentsPage() {
             Manage and track all payment transactions
           </p>
         </div>
-        <button
-          onClick={() => {
-            setPaymentFormData({ amount: "", title: "", customerEmail: "" });
-            setCheckoutLink("");
-            setShowPaymentModal(true);
-          }}
-          className="btn btn-primary w-full sm:w-auto"
-        >
-          <svg
-            className="w-4 h-4 lg:w-5 lg:h-5 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              const fetchData = async () => {
+                try {
+                  setLoading(true);
+                  const paymentsData = await apiService.getPayments();
+                  setPayments(paymentsData.payments || []);
+                  setTotalCount(paymentsData.payments?.length || 0);
+                  
+                  // Calculate total this month from succeeded payments
+                  const thisMonth = new Date().getMonth();
+                  const thisYear = new Date().getFullYear();
+                  const monthlyTotal =
+                    paymentsData.payments
+                      ?.filter((p) => {
+                        const paymentDate = new Date(p.createdAt);
+                        return (
+                          paymentDate.getMonth() === thisMonth &&
+                          paymentDate.getFullYear() === thisYear &&
+                          p.status === "succeeded"
+                        );
+                      })
+                      ?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+                  
+                  setTotalThisMonth(monthlyTotal);
+                  success("Payments refreshed successfully!");
+                } catch (err) {
+                  console.error("Failed to fetch payments:", err);
+                  error("Failed to refresh payments data");
+                } finally {
+                  setLoading(false);
+                }
+              };
+              fetchData();
+            }}
+            className="btn btn-secondary w-full sm:w-auto"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-            />
-          </svg>
-          Create Payment
-        </button>
+            <svg
+              className="w-4 h-4 lg:w-5 lg:h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+            Refresh
+          </button>
+          <button
+            onClick={() => {
+              setPaymentFormData({ amount: "", title: "", customerEmail: "" });
+              setCheckoutLink("");
+              setShowPaymentModal(true);
+            }}
+            className="btn btn-primary w-full sm:w-auto"
+          >
+            <svg
+              className="w-4 h-4 lg:w-5 lg:h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
+            </svg>
+            Create Payment
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}

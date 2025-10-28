@@ -3,6 +3,7 @@ const { getTenantPayments, getDashboardStats } = require('../services/paymentSer
 
 exports.listPayments = async(req, res) => {
     try {
+        console.log("reqest", req)
         const payments = await getTenantPayments(req.user.tenantId, req.query);
         res.json({ payments });
     } catch (err) {
