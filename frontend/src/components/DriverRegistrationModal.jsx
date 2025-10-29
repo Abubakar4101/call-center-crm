@@ -266,6 +266,10 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
 
     try {
       const isEdit = !!driverToEdit;
+      const preparePayload = !isEdit && {
+        ...formData,
+        hasLoader: false
+      }
       const url = isEdit ? `${SERVER_URL}/drivers/${driverToEdit._id}` : `${SERVER_URL}/drivers`;
       const method = isEdit ? 'PATCH' : 'POST';
 
@@ -275,7 +279,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(preparePayload),
       });
 
       const data = await response.json();

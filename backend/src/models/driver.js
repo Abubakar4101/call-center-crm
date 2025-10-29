@@ -139,6 +139,7 @@ const driverSchema = new mongoose.Schema({
     registrationDate: { type: Date, default: Date.now },
     lastUpdated: { type: Date, default: Date.now },
     notes: { type: String, default: '' },
+    hasLoader: { type: Boolean, default: false},
     
     // Created by tracking
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },

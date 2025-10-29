@@ -59,7 +59,10 @@ const AddLoaderModal = ({ isOpen, onClose, onSuccess }) => {
       error('Please select a driver');
       return;
     }
-    
+   const preparePayload = {
+    ...formData,
+    hasLoader: true
+   }
     setLoading(true);
 
     try {
@@ -69,7 +72,7 @@ const AddLoaderModal = ({ isOpen, onClose, onSuccess }) => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(preparePayload),
       });
 
       const data = await response.json();

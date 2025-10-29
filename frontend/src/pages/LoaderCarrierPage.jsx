@@ -127,7 +127,7 @@ const LoaderCarrierPage = () => {
       driver.loaderInfo?.agentName?.toLowerCase().includes(searchTerm.toLowerCase());
     
     // Since we're only showing active drivers, we don't need status filter
-    return matchesSearch;
+    return matchesSearch && driver.hasLoader;
   });
 
   const getStatusColor = (status) => {
