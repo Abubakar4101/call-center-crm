@@ -89,8 +89,9 @@ class ApiService {
   }
 
   // Payment APIs
-  async getPayments() {
-    const response = await fetch(`${this.baseURL}/payments`, {
+  async getPayments(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    const response = await fetch(`${this.baseURL}/payments${queryString ? `?${queryString}` : ''}`, {
       method: "GET",
       headers: this.getAuthHeaders(),
     });

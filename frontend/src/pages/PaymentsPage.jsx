@@ -17,32 +17,23 @@ export default function PaymentsPage() {
   });
   const [checkoutLink, setCheckoutLink] = useState("");
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+  const [totalPages, setTotalPages] = useState(1);
 
   const navigate = useNavigate();
   const fetchData = async () => {
     try {
       setLoading(true);
-      const paymentsData = await apiService.getPayments();
+      const [{ payments: paymentList, pagination }, stats] = await Promise.all([
+        apiService.getPayments({ page, limit: pageSize }),
+        apiService.getDashboardStats(),
+      ]);
 
-      setPayments(paymentsData.payments || []);
-      setTotalCount(paymentsData.payments?.length || 0);
-
-      // Calculate total this month from succeeded payments
-      const thisMonth = new Date().getMonth();
-      const thisYear = new Date().getFullYear();
-      const monthlyTotal =
-        paymentsData.payments
-          ?.filter((p) => {
-            const paymentDate = new Date(p.createdAt);
-            return (
-              paymentDate.getMonth() === thisMonth &&
-              paymentDate.getFullYear() === thisYear &&
-              p.status === "succeeded"
-            );
-          })
-          ?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
-
-      setTotalThisMonth(monthlyTotal);
+      setPayments(paymentList || []);
+      setTotalCount(stats.totalCount || pagination?.totalItems || 0);
+      setTotalThisMonth(stats.totalThisMonth || 0);
+      setTotalPages(pagination?.totalPages || 1);
     } catch (err) {
       console.error("Failed to fetch payments:", err);
       error("Failed to fetch payments data");
@@ -54,7 +45,7 @@ export default function PaymentsPage() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [page]);
 
   const getStatusBadge = (status) => {
     const statusClasses = {
@@ -125,26 +116,14 @@ export default function PaymentsPage() {
               const fetchData = async () => {
                 try {
                   setLoading(true);
-                  const paymentsData = await apiService.getPayments();
-                  setPayments(paymentsData.payments || []);
-                  setTotalCount(paymentsData.payments?.length || 0);
-                  
-                  // Calculate total this month from succeeded payments
-                  const thisMonth = new Date().getMonth();
-                  const thisYear = new Date().getFullYear();
-                  const monthlyTotal =
-                    paymentsData.payments
-                      ?.filter((p) => {
-                        const paymentDate = new Date(p.createdAt);
-                        return (
-                          paymentDate.getMonth() === thisMonth &&
-                          paymentDate.getFullYear() === thisYear &&
-                          p.status === "succeeded"
-                        );
-                      })
-                      ?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
-                  
-                  setTotalThisMonth(monthlyTotal);
+                  const [{ payments: paymentList, pagination }, stats] = await Promise.all([
+                    apiService.getPayments({ page, limit: pageSize }),
+                    apiService.getDashboardStats(),
+                  ]);
+                  setPayments(paymentList || []);
+                  setTotalCount(stats.totalCount || pagination?.totalItems || 0);
+                  setTotalThisMonth(stats.totalThisMonth || 0);
+                  setTotalPages(pagination?.totalPages || 1);
                   success("Payments refreshed successfully!");
                 } catch (err) {
                   console.error("Failed to fetch payments:", err);
@@ -421,6 +400,28 @@ export default function PaymentsPage() {
                   ))}
                 </tbody>
               </table>
+              {/* Pagination Controls */}
+              <div className="flex items-center justify-between p-4 border-t border-gray-700">
+                <div className="text-xs lg:text-sm text-gray-400">
+                  Page {page} of {totalPages} • {totalCount} total
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                    disabled={page <= 1 || loading}
+                    className="btn btn-secondary btn-sm"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+                    disabled={page >= totalPages || loading}
+                    className="btn btn-secondary btn-sm"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>

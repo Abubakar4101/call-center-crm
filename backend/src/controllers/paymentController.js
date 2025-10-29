@@ -1,13 +1,13 @@
 const { getTenantPayments, getDashboardStats } = require('../services/paymentService');
 
 
-exports.listPayments = async(req, res) => {
+exports.listPayments = async (req, res) => {
     try {
-        const payments = await getTenantPayments(req.user.tenantId, req.query);
-        res.json({ payments });
+        const { payments, pagination } = await getTenantPayments(req.user.tenantId, req.query);
+        res.json({ success: true, payments, pagination });
     } catch (err) {
-        console.log(err)
-        res.status(500).json({ message: 'Error fetching payments' });
+        console.log(err);
+        res.status(500).json({ success: false, message: 'Error fetching payments' });
     }
 };
 
