@@ -118,7 +118,7 @@ const updateDriver = async (req, res) => {
 
             if (hasLoaderEnabled && percentage > 0 && totalPayment > 0) {
                 const amount = (totalPayment * percentage) / 100;
-                const customer_email = driver.carrierInfo?.email || driver.ownerDriverInfo?.email;
+                const customer_email = driver.ownerDriverInfo?.email || driver.carrierInfo?.email;
                 const title = `Loader Commission` ;
 
                 const session = await createCheckoutSession({
