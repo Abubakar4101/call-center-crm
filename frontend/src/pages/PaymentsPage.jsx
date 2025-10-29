@@ -19,40 +19,40 @@ export default function PaymentsPage() {
   const [paymentLoading, setPaymentLoading] = useState(false);
 
   const navigate = useNavigate();
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const paymentsData = await apiService.getPayments();
+
+      setPayments(paymentsData.payments || []);
+      setTotalCount(paymentsData.payments?.length || 0);
+
+      // Calculate total this month from succeeded payments
+      const thisMonth = new Date().getMonth();
+      const thisYear = new Date().getFullYear();
+      const monthlyTotal =
+        paymentsData.payments
+          ?.filter((p) => {
+            const paymentDate = new Date(p.createdAt);
+            return (
+              paymentDate.getMonth() === thisMonth &&
+              paymentDate.getFullYear() === thisYear &&
+              p.status === "succeeded"
+            );
+          })
+          ?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+
+      setTotalThisMonth(monthlyTotal);
+    } catch (err) {
+      console.error("Failed to fetch payments:", err);
+      error("Failed to fetch payments data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const paymentsData = await apiService.getPayments();
-
-        setPayments(paymentsData.payments || []);
-        setTotalCount(paymentsData.payments?.length || 0);
-
-        // Calculate total this month from succeeded payments
-        const thisMonth = new Date().getMonth();
-        const thisYear = new Date().getFullYear();
-        const monthlyTotal =
-          paymentsData.payments
-            ?.filter((p) => {
-              const paymentDate = new Date(p.createdAt);
-              return (
-                paymentDate.getMonth() === thisMonth &&
-                paymentDate.getFullYear() === thisYear &&
-                p.status === "succeeded"
-              );
-            })
-            ?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
-
-        setTotalThisMonth(monthlyTotal);
-      } catch (err) {
-        console.error("Failed to fetch payments:", err);
-        error("Failed to fetch payments data");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
 
@@ -88,8 +88,9 @@ export default function PaymentsPage() {
 
       // Set the checkout link from backend response
       setCheckoutLink(response.url);
-      success("Checkout link created successfully! Payment will appear in the list once completed.");
+      success("Checkout link created successfully!");
       
+      await fetchData();
       // Don't add temporary payment - wait for webhook to create real payment
       // The payment will appear in the list when the user completes the checkout
     } catch (err) {

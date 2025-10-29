@@ -9,6 +9,7 @@ const AddLoaderModal = ({ isOpen, onClose, onSuccess }) => {
     loaderInfo: {
       agentName: '',
       percentage: 0,
+      totalPayment: 0,
       documents: 'No Docs',
       carrierPacket: '',
       reviews: 'Average Response'
@@ -16,6 +17,9 @@ const AddLoaderModal = ({ isOpen, onClose, onSuccess }) => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [checkoutLink, setCheckoutLink] = useState('');
+  const [paymentLoading, setPaymentLoading] = useState(false);
   const { success, error } = useToast();
 
   const SERVER_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -79,13 +83,17 @@ const AddLoaderModal = ({ isOpen, onClose, onSuccess }) => {
       
       if (data.success) {
         success('Loader details updated successfully');
+        console.log("this us the link", data.data.loaderInfo.paymentLink)
+        setCheckoutLink(data.data.loaderInfo.paymentLink || '');
+        setShowCheckoutModal(true);
         onSuccess();
-        onClose();
+       // onClose();
         // Reset form
         setFormData({
           loaderInfo: {
             agentName: '',
             percentage: 0,
+            totalPayment: 0,
             documents: 'No Docs',
             carrierPacket: '',
             reviews: 'Average Response'
@@ -152,6 +160,18 @@ const AddLoaderModal = ({ isOpen, onClose, onSuccess }) => {
                     value={formData.loaderInfo.agentName}
                     onChange={(e) => handleInputChange('agentName', e.target.value)}
                     className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Total Payment (USD)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.loaderInfo.totalPayment}
+                    onChange={(e) => handleInputChange('totalPayment', parseFloat(e.target.value) || 0)}
+                    className="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
                   />
                 </div>
                 <div>
@@ -224,6 +244,76 @@ const AddLoaderModal = ({ isOpen, onClose, onSuccess }) => {
           </form>
         </div>
       </div>
+
+      {showCheckoutModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col border border-gray-700">
+            <div className="flex items-center justify-between p-6 border-b border-gray-700 bg-gray-800 rounded-t-2xl">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-100">Checkout Link</h3>
+                <p className="text-sm text-gray-400 mt-1">Share this link with the customer to complete payment</p>
+              </div>
+              <button
+                onClick={() => { setShowCheckoutModal(false); onClose(); }}
+                className="text-gray-400 hover:text-gray-200 hover:bg-gray-700 transition-all duration-200 p-2 rounded-lg cursor-pointer"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="flex items-center mb-4">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-green-400">Payment link created successfully!</h3>
+                  <p className="text-sm text-gray-300 mt-1">Use the link below to proceed with payment.</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-200 mb-1">Checkout Link</label>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="text"
+                      value={checkoutLink}
+                      readOnly
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm sm:rounded-r-none"
+                    />
+                    <button
+                      onClick={() => { navigator.clipboard.writeText(checkoutLink); success('Link copied to clipboard!'); }}
+                      className="px-4 py-2 bg-gray-600 text-white rounded sm:rounded-l-none sm:border-l-0"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={() => window.open(checkoutLink, '_blank')}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    Open Link
+                  </button>
+                  <button
+                    onClick={() => { setShowCheckoutModal(false); onClose(); }}
+                    className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

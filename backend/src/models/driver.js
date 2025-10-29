@@ -117,6 +117,7 @@ const driverSchema = new mongoose.Schema({
     loaderInfo: {
         agentName: { type: String, default: '' },
         percentage: { type: Number, default: 0, min: 0, max: 100 },
+        totalPayment: { type: Number, default: 0, min: 0 },
         documents: { 
             type: String, 
             enum: ['Received', 'Missing', 'No Docs'], 
@@ -127,7 +128,8 @@ const driverSchema = new mongoose.Schema({
             type: String, 
             enum: ['Average Response', 'Booked for this week', 'Good Response', 'Not Responsing', 'Truck out of Order', 'Inactive MC'], 
             default: 'Average Response' 
-        }
+        },
+        paymentLink: { type: String, default: '' }
     },
 
     // Status and tracking

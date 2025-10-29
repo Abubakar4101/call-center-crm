@@ -1,5 +1,8 @@
 const Driver = require('../models/driver');
 const driverService = require('../services/driverService');
+const { createCheckoutSession } = require('../services/stripeService');
+const { sendEmail } = require('../services/emailService');
+const { generateInvoiceHtml } = require('../services/invoiceService');
 
 // Get all drivers for a tenant
 const getAllDrivers = async (req, res) => {
@@ -104,6 +107,53 @@ const updateDriver = async (req, res) => {
                 success: false,
                 message: 'Driver not found'
             });
+        }
+
+        // Auto create payment link and send invoice when loader is set with totalPayment and percentage
+        try {
+            const hasLoaderEnabled = Boolean(updateData.hasLoader || driver.hasLoader);
+            const lInfo = updateData.loaderInfo || driver.loaderInfo || {};
+            const percentage = typeof lInfo.percentage === 'number' ? lInfo.percentage : driver.loaderInfo?.percentage;
+            const totalPayment = typeof lInfo.totalPayment === 'number' ? lInfo.totalPayment : driver.loaderInfo?.totalPayment;
+
+            if (hasLoaderEnabled && percentage > 0 && totalPayment > 0) {
+                const amount = (totalPayment * percentage) / 100;
+                const customer_email = driver.carrierInfo?.email || driver.ownerDriverInfo?.email;
+                const title = `Loader Commission` ;
+
+                const session = await createCheckoutSession({
+                    tenantId,
+                    amount,
+                    currency: 'usd',
+                    customer_email,
+                    title,
+                });
+
+                // Persist payment link into driver.loaderInfo.paymentLink
+                driver.loaderInfo = {
+                    ...driver.loaderInfo,
+                    paymentLink: session.url,
+                };
+                await driver.save();
+
+                // Send invoice email to loader recipient
+                const invoiceHtml = generateInvoiceHtml({
+                    title,
+                    amount,
+                    currencyCode: 'USD',
+                    recipientName: driver.ownerDriverInfo.fullName || '',
+                    recipientEmail: customer_email,
+                    checkoutUrl: session.url,
+                    companyName: process.env.COMPANY_NAME || 'SkyInfinit',
+                });
+                await sendEmail({
+                    to: customer_email,
+                    subject: `Invoice: ${title}`,
+                    html: invoiceHtml,
+                });
+            }
+        } catch (e) {
+            console.error('Loader payment link creation/email failed:', e.message);
         }
 
         res.json({
