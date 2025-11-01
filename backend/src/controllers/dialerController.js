@@ -1,5 +1,5 @@
 const dialerService = require("../services/dialerService");
-const Staff = require("../models/Staff");
+const Staff = require("../models/staff");
 
 exports.start = async (req, res) => {
   try {

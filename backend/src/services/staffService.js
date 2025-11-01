@@ -1,5 +1,5 @@
 const bcrypt = require('bcrypt');
-const Staff = require('../models/Staff');
+const Staff = require('../models/staff');
 
 async function createStaff(tenantId, data, createdBy) {
     if (!data.password) throw new Error('Password is required');

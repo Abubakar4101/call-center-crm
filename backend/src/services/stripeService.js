@@ -1,5 +1,5 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const Payment = require('../models/Payment');
+const Payment = require('../models/payment');
 
 
 async function createCheckoutSession({ tenantId, amount, currency, customer_email, title }) {

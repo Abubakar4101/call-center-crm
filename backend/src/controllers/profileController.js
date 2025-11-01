@@ -1,8 +1,8 @@
 const path = require("path");
 const fs = require("fs");
 const dayjs = require("dayjs");
-const User = require("../models/User");
-const Staff = require("../models/Staff");
+const User = require("../models/user");
+const Staff = require("../models/staff");
 
 exports.getProfile = async(req, res) => {
     try {

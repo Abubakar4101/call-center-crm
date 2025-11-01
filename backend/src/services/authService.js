@@ -1,8 +1,8 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const Staff = require('../models/Staff');
-const Tenant = require('../models/Tenant');
+const User = require('../models/user');
+const Staff = require('../models/staff');
+const Tenant = require('../models/tenant');
 
 async function register({ type, name, email, password, tenantName, role }) {
     let tenant = await Tenant.findOne({ name: tenantName });
