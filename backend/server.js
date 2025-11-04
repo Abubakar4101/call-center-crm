@@ -26,8 +26,13 @@ const app = express();
 // const io = new Server(server, { cors: { origin: process.env.FRONTEND_URL || '*' } });
 // app.set('io', io);
 
-
-app.use(cors());
+const corsOptions = {
+    origin: "*",
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    allowedHeaders: "Content-Type, Authorization"
+  };
+  
+app.use(cors(corsOptions));
 
 app.post(
     '/api/stripe/webhook',
