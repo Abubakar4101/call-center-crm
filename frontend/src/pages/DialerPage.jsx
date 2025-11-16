@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import apiService from "../services/api";
 import { useToast } from "../contexts/ToastContext.jsx";
 
@@ -12,6 +12,8 @@ export default function DialerPage() {
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [calling, setCalling] = useState(false);
   const [callLogs, setCallLogs] = useState([]); // store attempts / results
+  const [contactHeaders, setContactHeaders] = useState([]); // store all field names from loaded file
+
 
   useEffect(() => {
     fetchFiles();
@@ -36,12 +38,30 @@ export default function DialerPage() {
     setLoadingContacts(true);
     try {
       const response = await apiService.loadContacts(selectedFileId);
-      setContacts(response.contacts || []);
+      const loadedContacts = response.contacts || [];
+      setContacts(loadedContacts);
       setIndex(0);
       setCallLogs([]);
+      
+      // Extract all unique field names from the first contact (or all contacts)
+      if (loadedContacts.length > 0) {
+        const allKeys = new Set();
+        loadedContacts.forEach(contact => {
+          Object.keys(contact).forEach(key => {
+            // Exclude internal fields like 'id'
+            if (key !== 'id') {
+              allKeys.add(key);
+            }
+          });
+        });
+        setContactHeaders(Array.from(allKeys));
+      } else {
+        setContactHeaders([]);
+      }
     } catch (err) {
       console.error("loadContacts error:", err);
       setContacts([]);
+      setContactHeaders([]);
       error("Failed to load contacts: " + err.message);
     } finally {
       setLoadingContacts(false);
@@ -61,16 +81,18 @@ export default function DialerPage() {
       const token = localStorage.getItem("token") || "";
       const url = `https://voice.google.com/u/0/messages#autocall=${digitsOnly}&token=${encodeURIComponent(token)}`;
 
-      // Use a named window so if GV is already open, it focuses/switches instead of opening a new tab
-      const win = window.open(url, "google-voice", "noopener,noreferrer");
-      try { win && win.focus && win.focus(); } catch (_) {}
+        try {
+          window.open(url, "google-voice").focus();
+        } catch (e) {
+          console.error("Error opening Google Voice:", e);
+        }
 
       setCallLogs((l) => [
         { contact, result: { message: "Opened Google Voice for auto-call" }, time: new Date().toISOString() },
         ...l,
       ]);
       // Record call made metric (non-blocking)
-      apiService.incrementCallsMade().catch(() => {});
+      apiService.incrementCallsMade().catch(() => { });
     } catch (err) {
       setCallLogs((l) => [
         { contact, error: err.response?.data?.error || err.response?.data?.message || err.message || err.error || 'An error occurred', time: new Date().toISOString() },
@@ -103,6 +125,16 @@ export default function DialerPage() {
   }
 
   const current = contacts[index] || null;
+
+  // Function to humanize field names (e.g., operating_status -> Operating Status)
+  function humanizeFieldName(fieldName) {
+    if (!fieldName) return "";
+    // Convert snake_case and camelCase to Title Case
+    return fieldName
+      .replace(/([a-z])([A-Z])/g, "$1 $2") // camelCase: add space before capital
+      .replace(/_/g, " ") // snake_case: replace underscore with space
+      .replace(/\b\w/g, (char) => char.toUpperCase()); // Capitalize first letter of each word
+  }
 
   return (
     <div className="space-y-4 lg:space-y-6 dialer-page">
@@ -400,32 +432,60 @@ export default function DialerPage() {
             <div className="card-body">
               {current ? (
                 <div className="bg-gray-700 border border-gray-600 rounded-lg p-6">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                      <svg
-                        className="w-6 h-6 text-blue-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                        />
-                      </svg>
+                  <div className="space-y-4">
+                    {/* Header with avatar and basic info */}
+                    <div className="flex items-center space-x-4 pb-4 border-b border-gray-600">
+                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                        <svg
+                          className="w-6 h-6 text-blue-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-lg font-semibold text-gray-100">
+                          {current.name || current.Name || "— (No name)"}
+                        </h4>
+                        <p className="text-blue-400 font-medium">
+                          {current.phone || current.Phone || current.mobile || current.Mobile || "— (No phone)"}
+                        </p>
+                        <p className="text-sm text-gray-400 mt-1">
+                          Contact {index + 1} of {contacts.length}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <h4 className="text-lg font-semibold text-gray-100">
-                        {current.name || "— (No name)"}
-                      </h4>
-                      <p className="text-blue-400 font-medium">
-                        {current.phone || current.mobile || "— (No phone)"}
-                      </p>
-                      <p className="text-sm text-gray-400 mt-1">
-                        Contact {index + 1} of {contacts.length}
-                      </p>
+                    
+                    {/* All contact fields */}
+                    <div className="space-y-3">
+                      {contactHeaders.length > 0 ? (
+                        contactHeaders.map((header) => {
+                          const value = current[header];
+                          // Skip if value is empty or if it's the id field
+                          if (header === 'id' || (value === null || value === undefined || value === '')) {
+                            return null;
+                          }
+                          return (
+                            <div key={header} className="flex flex-col">
+                              <span className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">
+                                {humanizeFieldName(header)}
+                              </span>
+                              <span className="text-sm text-gray-100 break-words">
+                                {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                              </span>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p className="text-sm text-gray-400">No additional fields available</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -505,11 +565,10 @@ export default function DialerPage() {
                           </p>
                           <div className="mt-2">
                             <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                log.error
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${log.error
                                   ? "bg-red-100 text-red-800"
                                   : "bg-green-100 text-green-800"
-                              }`}
+                                }`}
                             >
                               {log.error ? "Failed" : "Success"}
                             </span>

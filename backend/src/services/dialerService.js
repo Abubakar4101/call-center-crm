@@ -70,12 +70,14 @@ async function loadDialerContacts(fileId) {
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const rows = xlsx.utils.sheet_to_json(sheet);
 
-  // 3. Normalize rows (ensure Phone field exists)
+  // 3. Preserve all fields from the file (don't filter, just normalize)
   const contacts = rows.map((row, idx) => ({
     id: idx + 1,
+    // Preserve all original fields
+    ...row,
+    // Ensure common fields are accessible with fallbacks
     name: row.Name || row.name || "",
-    phone: row.Phone || row.phone || "",
-    notes: row.Notes || row.notes || "",
+    phone: row.Phone || row.phone || row.Mobile || row.mobile || "",
   }));
 
   return contacts;
