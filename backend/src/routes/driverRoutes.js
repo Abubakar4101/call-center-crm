@@ -31,28 +31,28 @@ const upload = multer({
 router.use(auth);
 
 // Get all drivers (with permission check)
-router.get('/', checkPermission('driver'), driverController.getAllDrivers);
+router.get('/', checkPermission(['driver', 'load']), driverController.getAllDrivers);
 
 // Get driver statistics
-router.get('/stats', checkPermission('driver'), driverController.getDriverStats);
+router.get('/stats', checkPermission(['driver', 'load']), driverController.getDriverStats);
 
 // Get single driver by ID
-router.get('/:id', checkPermission('driver'), driverController.getDriverById);
+router.get('/:id', checkPermission(['driver', 'load']), driverController.getDriverById);
 
 // Create new driver (requires create permission)
 router.post('/', checkPermission('driver_create'), driverController.createDriver);
 
 // Update driver (requires update permission)
-router.put('/:id', checkPermission('driver_update'), driverController.updateDriver);
+router.put('/:id', checkPermission(['driver_update', 'load']), driverController.updateDriver);
 
 // Update driver with PATCH (partial update)
-router.patch('/:id', checkPermission('driver_update'), driverController.updateDriver);
+router.patch('/:id', checkPermission(['driver_update', 'load']), driverController.updateDriver);
 
 // Update driver status (requires admin/supervisor permission)
 router.patch('/:id/status', checkPermission('driver_approve'), driverController.updateDriverStatus);
 
 // Upload document (requires update permission)
-router.post('/:id/upload', 
+router.post('/:id/upload',
     checkPermission('driver_update'),
     upload.single('document'),
     driverController.uploadDocument

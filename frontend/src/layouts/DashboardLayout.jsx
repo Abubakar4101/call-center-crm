@@ -47,7 +47,7 @@ export default function DashboardLayout() {
       "/dashboard/dialer": "dialer",
       "/dashboard/leads": "dialer",
       "/dashboard/drivers": "driver",
-      "/dashboard/loads": "driver",
+      "/dashboard/loads": "load",
     };
 
     const currentPath = location.pathname;
@@ -243,7 +243,7 @@ export default function DashboardLayout() {
       "/dashboard/dialer": "dialer",
       "/dashboard/leads": "dialer",
       "/dashboard/drivers": "driver",
-      "/dashboard/loads": "driver",
+      "/dashboard/loads": "load",
     };
     const perm = map[path];
     return !perm || (user.permissions || []).includes(perm);

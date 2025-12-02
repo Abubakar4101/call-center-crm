@@ -5,7 +5,7 @@ async function createStaff(tenantId, data, createdBy) {
     if (!data.password) throw new Error('Password is required');
 
     const passwordHash = await bcrypt.hash(data.password, 10);
-    const allowedPermissions = ['payment', 'staff', 'files', 'dialer', 'driver', 'scraper'];
+    const allowedPermissions = ['payment', 'staff', 'files', 'dialer', 'driver', 'scraper', 'load'];
     const permissions = Array.isArray(data.permissions)
         ? data.permissions.filter(p => allowedPermissions.includes(p))
         : [];
@@ -69,7 +69,7 @@ async function updateStaff(tenantId, staffId, data) {
         delete update.password;
     }
     if (Array.isArray(data.permissions)) {
-        const allowed = ['payment', 'staff', 'files', 'dialer', 'driver', 'scraper'];
+        const allowed = ['payment', 'staff', 'files', 'dialer', 'driver', 'scraper', 'load'];
         update.permissions = data.permissions.filter(p => allowed.includes(p));
     }
     return Staff.findOneAndUpdate({ _id: staffId, tenant: tenantId }, update, { new: true });

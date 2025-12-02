@@ -30,7 +30,7 @@ exports.getProfile = async (req, res) => {
             role: 'admin',
             tenant: user.tenant,
             profilePicture: user.profilePicture || null,
-            permissions: ['payment', 'staff', 'files', 'dialer', 'driver', 'scraper']
+            permissions: ['payment', 'staff', 'files', 'dialer', 'driver', 'scraper', 'load']
         });
     } catch (err) {
         res.status(500).json({ error: err.message });

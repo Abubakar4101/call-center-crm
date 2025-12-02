@@ -654,7 +654,8 @@ export default function StaffPage() {
                       { key: 'staff', label: 'Staff Module' },
                       { key: 'files', label: 'Files Module' },
                       { key: 'dialer', label: 'Dialer/Lead Module' },
-                      { key: 'driver', label: 'Driver/Load Module' },
+                      { key: 'driver', label: 'Driver Module' },
+                      { key: 'load', label: 'Load Module' },
                       // { key: 'scraper', label: 'Run Scraper Module' },
                     ].map((perm) => (
                       <label key={perm.key} className="inline-flex items-center space-x-2 text-gray-200">
