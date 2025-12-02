@@ -4,7 +4,7 @@ const { generateInvoiceHtml } = require('../services/invoiceService');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 
-exports.createCheckout = async(req, res) => {
+exports.createCheckout = async (req, res) => {
     try {
         const session = await createCheckoutSession({ tenantId: req.user.tenantId, ...req.body });
 
@@ -20,10 +20,10 @@ exports.createCheckout = async(req, res) => {
                 currencyCode: currency,
                 recipientEmail: customer_email,
                 checkoutUrl: session.url,
-                companyName: process.env.COMPANY_NAME || 'SkyInfinit',
+                companyName: process.env.COMPANY_NAME,
             });
             console.log('This is the html')
-            sendEmail({ to: customer_email, subject: `Invoice: ${title}`, html }).catch(() => {});
+            sendEmail({ to: customer_email, subject: `Invoice: ${title}`, html }).catch(() => { });
         }
 
         res.json({ url: session.url });
@@ -33,7 +33,7 @@ exports.createCheckout = async(req, res) => {
 };
 
 
-exports.webhook = async(req, res) => {
+exports.webhook = async (req, res) => {
     const sig = req.headers['stripe-signature'];
     let event;
     try {

@@ -2,74 +2,65 @@ const mongoose = require('mongoose');
 
 const driverSchema = new mongoose.Schema({
     tenant: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant', required: true },
-    
+
     // Carrier Information
     carrierInfo: {
-        companyName: { type: String, required: true },
+        companyName: { type: String, default: '' },
         dba: { type: String, default: '' },
-        mcNumber: { type: String, required: true },
-        dotNumber: { type: String, required: true },
+        mcNumber: { type: String, default: '' },
+        dotNumber: { type: String, default: '' },
         address: {
-            street: { type: String, required: true },
-            city: { type: String, required: true },
-            state: { type: String, required: true },
-            zipCode: { type: String, required: true },
+            street: { type: String, default: '' },
+            city: { type: String, default: '' },
+            state: { type: String, default: '' },
+            zipCode: { type: String, default: '' },
             country: { type: String, default: 'USA' }
         },
-        phone: { type: String, required: true },
-        email: { type: String, required: true }
+        phone: { type: String, default: '' },
+        email: { type: String, default: '' }
     },
 
     // Owner/Driver Information
     ownerDriverInfo: {
-        fullName: { type: String, required: true },
-        personalNumber: { type: String, default: '' },
-        phone: { type: String, required: true },
-        email: { type: String, required: true },
-        dateOfBirth: { type: Date },
-        ssn: { type: String, default: '' },
-        cdlNumber: { type: String, required: true },
-        cdlExpiry: { type: Date, required: true }
+        driverName: { type: String, default: '' },
+        driverPhone: { type: String, default: '' },
+        ownerName: { type: String, default: '' },
+        ownerPhone: { type: String, default: '' }
     },
 
     // Truck & Equipment Information
     truckEquipmentInfo: {
-        truckType: { 
-            type: String, 
-            required: true,
+        truckType: {
+            type: String,
+            default: 'Dry Van',
             enum: ['Dry Van', 'Refrigerated', 'Flatbed', 'Tanker', 'Container', 'Car Carrier', 'Other']
         },
-        weightCapacity: { type: Number, required: true }, // in pounds
+        weightCapacity: { type: Number, default: 0 }, // in pounds
         size: {
-            length: { type: Number, required: true }, // in feet
-            width: { type: Number, required: true }, // in feet
-            height: { type: Number, required: true } // in feet
+            length: { type: Number, default: 0 }, // in feet
+            width: { type: Number, default: 0 }, // in feet
+            height: { type: Number, default: 0 } // in feet
         },
-        licensePlate: { type: String, required: true },
-        licenseState: { type: String, required: true },
-        vin: { type: String, required: true },
-        year: { type: Number, required: true },
-        make: { type: String, required: true },
-        model: { type: String, required: true }
+        licensePlate: { type: String, default: '' },
+        licenseState: { type: String, default: '' },
+        vin: { type: String, default: '' },
+        year: { type: Number, default: 0 },
+        truckNumber: { type: String, default: '' },
+        model: { type: String, default: '' }
     },
 
     // Payment/Billing Information
     paymentBillingInfo: {
-        dispatchFee: { type: Number, required: true, min: 0, max: 100 }, // percentage
-        paymentTerms: { 
-            type: String, 
-            required: true,
+        dispatchFee: { type: Number, default: 0, min: 0, max: 100 }, // percentage
+        paymentTerms: {
+            type: String,
+            default: 'Weekly',
             enum: ['Weekly', 'Bi-weekly', 'Monthly', 'Per Load']
         },
-        preferredPaymentMethod: { 
-            type: String, 
-            required: true,
-            enum: ['Direct Deposit', 'Check', 'ACH Transfer', 'Wire Transfer']
-        },
-        bankInfo: {
-            bankName: { type: String, default: '' },
-            accountNumber: { type: String, default: '' },
-            routingNumber: { type: String, default: '' }
+        preferredPaymentMethod: {
+            type: String,
+            default: 'Zelle',
+            enum: ['Zelle', 'Stripe', 'Cash App']
         }
     },
 
@@ -95,10 +86,7 @@ const driverSchema = new mongoose.Schema({
         insuranceCertificate: { type: Boolean, default: false },
         w9Form: { type: Boolean, default: false },
         noa: { type: Boolean, default: false }, // Notice of Assignment
-        dispatchServiceAgreement: { type: Boolean, default: false },
-        cdlCopy: { type: Boolean, default: false },
-        medicalCard: { type: Boolean, default: false },
-        drugTestResults: { type: Boolean, default: false }
+        cdlCopy: { type: Boolean, default: false }
     },
 
     // Document URLs (for file storage)
@@ -107,42 +95,52 @@ const driverSchema = new mongoose.Schema({
         insuranceCertificateUrl: { type: String, default: '' },
         w9FormUrl: { type: String, default: '' },
         noaUrl: { type: String, default: '' },
-        dispatchServiceAgreementUrl: { type: String, default: '' },
-        cdlCopyUrl: { type: String, default: '' },
-        medicalCardUrl: { type: String, default: '' },
-        drugTestResultsUrl: { type: String, default: '' }
+        cdlCopyUrl: { type: String, default: '' }
     },
 
     // Loader/Carrier specific fields
     loaderInfo: {
         agentName: { type: String, default: '' },
         percentage: { type: Number, default: 0, min: 0, max: 100 },
-        totalPayment: { type: Number, default: 0, min: 0 },
-        documents: { 
-            type: String, 
-            enum: ['Received', 'Missing', 'No Docs'], 
-            default: 'No Docs' 
+
+        documents: {
+            type: String,
+            enum: ['Received', 'Missing', 'No Docs'],
+            default: 'No Docs'
         },
         carrierPacket: { type: String, default: '' },
-        reviews: { 
-            type: String, 
-            enum: ['Average Response', 'Booked for this week', 'Good Response', 'Not Responsing', 'Truck out of Order', 'Inactive MC'], 
-            default: 'Average Response' 
+        reviews: {
+            type: String,
+            enum: ['Average Response', 'Booked for this week', 'Good Response', 'Not Responsing', 'Truck out of Order', 'Inactive MC'],
+            default: 'Average Response'
         },
         paymentLink: { type: String, default: '' }
     },
 
     // Status and tracking
-    status: { 
-        type: String, 
-        enum: ['Active', 'N/A', 'Pending', 'Rejected'], 
-        default: 'Pending' 
+    status: {
+        type: String,
+        enum: ['Active', 'Approved', 'Inactive', 'Pending', 'Rejected'],
+        default: 'Pending'
     },
     registrationDate: { type: Date, default: Date.now },
     lastUpdated: { type: Date, default: Date.now },
     notes: { type: String, default: '' },
-    hasLoader: { type: Boolean, default: false},
-    
+    hasLoader: { type: Boolean, default: false },
+    gross: { type: Number, default: 0 }, // For Active tag logic (gross > 300)
+
+    // Load Details (Added for tracking load info)
+    loadDetails: {
+        from: { type: String, default: '' },
+        to: { type: String, default: '' },
+        dhMiles: { type: String, default: '' },
+        lmMiles: { type: String, default: '' },
+        amount: { type: Number, default: 0 },
+        puDate: { type: Date },
+        delType: { type: String, default: '' },
+        loadDetails: { type: String, default: '' }
+    },
+
     // Created by tracking
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },

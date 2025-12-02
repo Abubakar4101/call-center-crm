@@ -21,14 +21,10 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
     },
     // Owner/Driver Information
     ownerDriverInfo: {
-      fullName: '',
-      personalNumber: '',
-      phone: '',
-      email: '',
-      dateOfBirth: '',
-      ssn: '',
-      cdlNumber: '',
-      cdlExpiry: ''
+      driverName: '',
+      driverPhone: '',
+      ownerName: '',
+      ownerPhone: ''
     },
     // Truck & Equipment Information
     truckEquipmentInfo: {
@@ -43,19 +39,14 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
       licenseState: '',
       vin: '',
       year: '',
-      make: '',
+      truckNumber: '',
       model: ''
     },
     // Payment/Billing Information
     paymentBillingInfo: {
       dispatchFee: '',
       paymentTerms: 'Weekly',
-      preferredPaymentMethod: 'Direct Deposit',
-      bankInfo: {
-        bankName: '',
-        accountNumber: '',
-        routingNumber: ''
-      }
+      preferredPaymentMethod: 'Zelle'
     },
     // Preferences
     preferences: {
@@ -72,10 +63,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
       insuranceCertificate: false,
       w9Form: false,
       noa: false,
-      dispatchServiceAgreement: false,
-      cdlCopy: false,
-      medicalCard: false,
-      drugTestResults: false
+      cdlCopy: false
     }
   });
 
@@ -106,14 +94,10 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
           email: driverToEdit.carrierInfo?.email || ''
         },
         ownerDriverInfo: {
-          fullName: driverToEdit.ownerDriverInfo?.fullName || '',
-          personalNumber: driverToEdit.ownerDriverInfo?.personalNumber || '',
-          phone: driverToEdit.ownerDriverInfo?.phone || '',
-          email: driverToEdit.ownerDriverInfo?.email || '',
-          dateOfBirth: driverToEdit.ownerDriverInfo?.dateOfBirth || '',
-          ssn: driverToEdit.ownerDriverInfo?.ssn || '',
-          cdlNumber: driverToEdit.ownerDriverInfo?.cdlNumber || '',
-          cdlExpiry: driverToEdit.ownerDriverInfo?.cdlExpiry || ''
+          driverName: driverToEdit.ownerDriverInfo?.driverName || driverToEdit.ownerDriverInfo?.fullName || '',
+          driverPhone: driverToEdit.ownerDriverInfo?.driverPhone || driverToEdit.ownerDriverInfo?.phone || '',
+          ownerName: driverToEdit.ownerDriverInfo?.ownerName || '',
+          ownerPhone: driverToEdit.ownerDriverInfo?.ownerPhone || ''
         },
         truckEquipmentInfo: {
           truckType: driverToEdit.truckEquipmentInfo?.truckType || 'Dry Van',
@@ -127,18 +111,13 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
           licenseState: driverToEdit.truckEquipmentInfo?.licenseState || '',
           vin: driverToEdit.truckEquipmentInfo?.vin || '',
           year: driverToEdit.truckEquipmentInfo?.year || '',
-          make: driverToEdit.truckEquipmentInfo?.make || '',
+          truckNumber: driverToEdit.truckEquipmentInfo?.truckNumber || driverToEdit.truckEquipmentInfo?.make || '',
           model: driverToEdit.truckEquipmentInfo?.model || ''
         },
         paymentBillingInfo: {
           dispatchFee: driverToEdit.paymentBillingInfo?.dispatchFee || '',
           paymentTerms: driverToEdit.paymentBillingInfo?.paymentTerms || 'Weekly',
-          preferredPaymentMethod: driverToEdit.paymentBillingInfo?.preferredPaymentMethod || 'Direct Deposit',
-          bankInfo: {
-            bankName: driverToEdit.paymentBillingInfo?.bankInfo?.bankName || '',
-            accountNumber: driverToEdit.paymentBillingInfo?.bankInfo?.accountNumber || '',
-            routingNumber: driverToEdit.paymentBillingInfo?.bankInfo?.routingNumber || ''
-          }
+          preferredPaymentMethod: driverToEdit.paymentBillingInfo?.preferredPaymentMethod || 'Zelle'
         },
         preferences: {
           preferredRoutes: driverToEdit.preferences?.preferredRoutes || [],
@@ -153,21 +132,18 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
           insuranceCertificate: driverToEdit.complianceDocuments?.insuranceCertificate || false,
           w9Form: driverToEdit.complianceDocuments?.w9Form || false,
           noa: driverToEdit.complianceDocuments?.noa || false,
-          dispatchServiceAgreement: driverToEdit.complianceDocuments?.dispatchServiceAgreement || false,
-          cdlCopy: driverToEdit.complianceDocuments?.cdlCopy || false,
-          medicalCard: driverToEdit.complianceDocuments?.medicalCard || false,
-          drugTestResults: driverToEdit.complianceDocuments?.drugTestResults || false
+          cdlCopy: driverToEdit.complianceDocuments?.cdlCopy || false
         }
       });
     } else if (!driverToEdit && isOpen) {
       // Reset form for new driver
       setFormData({
         carrierInfo: { companyName: '', dba: '', mcNumber: '', dotNumber: '', address: { street: '', city: '', state: '', zipCode: '', country: 'USA' }, phone: '', email: '' },
-        ownerDriverInfo: { fullName: '', personalNumber: '', phone: '', email: '', dateOfBirth: '', ssn: '', cdlNumber: '', cdlExpiry: '' },
-        truckEquipmentInfo: { truckType: 'Dry Van', weightCapacity: '', size: { length: '', width: '', height: '' }, licensePlate: '', licenseState: '', vin: '', year: '', make: '', model: '' },
-        paymentBillingInfo: { dispatchFee: '', paymentTerms: 'Weekly', preferredPaymentMethod: 'Direct Deposit', bankInfo: { bankName: '', accountNumber: '', routingNumber: '' } },
+        ownerDriverInfo: { driverName: '', driverPhone: '', ownerName: '', ownerPhone: '' },
+        truckEquipmentInfo: { truckType: 'Dry Van', weightCapacity: '', size: { length: '', width: '', height: '' }, licensePlate: '', licenseState: '', vin: '', year: '', truckNumber: '', model: '' },
+        paymentBillingInfo: { dispatchFee: '', paymentTerms: 'Weekly', preferredPaymentMethod: 'Zelle' },
         preferences: { preferredRoutes: [], loadTypePreferences: [], minimumRatePerMile: '', maxMilesPerWeek: '', homeTime: '', specialRequirements: '' },
-        complianceDocuments: { mcAuthority: false, insuranceCertificate: false, w9Form: false, noa: false, dispatchServiceAgreement: false, cdlCopy: false, medicalCard: false, drugTestResults: false }
+        complianceDocuments: { mcAuthority: false, insuranceCertificate: false, w9Form: false, noa: false, cdlCopy: false }
       });
     }
   }, [driverToEdit, isOpen]);
@@ -266,13 +242,14 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
 
     try {
       const isEdit = !!driverToEdit;
-      const preparePayload = !isEdit && {
+      const preparePayload = {
         ...formData,
-        hasLoader: false
+        hasLoader: isEdit ? driverToEdit.hasLoader : false
       }
+
       const url = isEdit ? `${SERVER_URL}/drivers/${driverToEdit._id}` : `${SERVER_URL}/drivers`;
       const method = isEdit ? 'PATCH' : 'POST';
-
+      console.log("this is the payload", preparePayload)
       const response = await fetch(url, {
         method: method,
         headers: {
@@ -290,11 +267,11 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
         onClose();
         setFormData({
           carrierInfo: { companyName: '', dba: '', mcNumber: '', dotNumber: '', address: { street: '', city: '', state: '', zipCode: '', country: 'USA' }, phone: '', email: '' },
-          ownerDriverInfo: { fullName: '', personalNumber: '', phone: '', email: '', dateOfBirth: '', ssn: '', cdlNumber: '', cdlExpiry: '' },
-          truckEquipmentInfo: { truckType: 'Dry Van', weightCapacity: '', size: { length: '', width: '', height: '' }, licensePlate: '', licenseState: '', vin: '', year: '', make: '', model: '' },
-          paymentBillingInfo: { dispatchFee: '', paymentTerms: 'Weekly', preferredPaymentMethod: 'Direct Deposit', bankInfo: { bankName: '', accountNumber: '', routingNumber: '' } },
+          ownerDriverInfo: { driverName: '', driverPhone: '', ownerName: '', ownerPhone: '' },
+          truckEquipmentInfo: { truckType: 'Dry Van', weightCapacity: '', size: { length: '', width: '', height: '' }, licensePlate: '', licenseState: '', vin: '', year: '', truckNumber: '', model: '' },
+          paymentBillingInfo: { dispatchFee: '', paymentTerms: 'Weekly', preferredPaymentMethod: 'Zelle' },
           preferences: { preferredRoutes: [], loadTypePreferences: [], minimumRatePerMile: '', maxMilesPerWeek: '', homeTime: '', specialRequirements: '' },
-          complianceDocuments: { mcAuthority: false, insuranceCertificate: false, w9Form: false, noa: false, dispatchServiceAgreement: false, cdlCopy: false, medicalCard: false, drugTestResults: false }
+          complianceDocuments: { mcAuthority: false, insuranceCertificate: false, w9Form: false, noa: false, cdlCopy: false }
         });
         setCurrentStep(1);
       } else {
@@ -314,57 +291,21 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
   };
   const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 1));
 
-  // Validation functions for each step
+  // Validation functions for each step - all fields are now optional
   const isStep1Valid = () => {
-    const { carrierInfo } = formData;
-    return (
-      carrierInfo.companyName.trim() !== '' &&
-      carrierInfo.mcNumber.trim() !== '' &&
-      carrierInfo.dotNumber.trim() !== '' &&
-      carrierInfo.address.street.trim() !== '' &&
-      carrierInfo.address.city.trim() !== '' &&
-      carrierInfo.address.state.trim() !== '' &&
-      carrierInfo.address.zipCode.trim() !== '' &&
-      carrierInfo.phone.trim() !== '' &&
-      carrierInfo.email.trim() !== ''
-    );
+    return true; // All fields optional
   };
 
   const isStep2Valid = () => {
-    const { ownerDriverInfo } = formData;
-    return (
-      ownerDriverInfo.fullName.trim() !== '' &&
-      ownerDriverInfo.phone.trim() !== '' &&
-      ownerDriverInfo.email.trim() !== '' &&
-      ownerDriverInfo.cdlNumber.trim() !== '' &&
-      ownerDriverInfo.cdlExpiry.trim() !== ''
-    );
+    return true; // All fields optional
   };
 
   const isStep3Valid = () => {
-    const { truckEquipmentInfo } = formData;
-    return (
-      truckEquipmentInfo.truckType.trim() !== '' &&
-      truckEquipmentInfo.weightCapacity.toString().trim() !== '' &&
-      truckEquipmentInfo.size.length.toString().trim() !== '' &&
-      truckEquipmentInfo.size.width.toString().trim() !== '' &&
-      truckEquipmentInfo.size.height.toString().trim() !== '' &&
-      truckEquipmentInfo.licensePlate.trim() !== '' &&
-      truckEquipmentInfo.licenseState.trim() !== '' &&
-      truckEquipmentInfo.vin.trim() !== '' &&
-      truckEquipmentInfo.year.toString().trim() !== '' &&
-      truckEquipmentInfo.make.trim() !== '' &&
-      truckEquipmentInfo.model.trim() !== ''
-    );
+    return true; // All fields optional
   };
 
   const isStep4Valid = () => {
-    const { paymentBillingInfo } = formData;
-    return (
-      paymentBillingInfo.dispatchFee.toString().trim() !== '' &&
-      paymentBillingInfo.paymentTerms.trim() !== '' &&
-      paymentBillingInfo.preferredPaymentMethod.trim() !== ''
-    );
+    return true; // All fields optional
   };
 
   const isStep5Valid = () => {
@@ -379,15 +320,14 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
     return true;
   };
 
+
   const isStep6Valid = () => {
     // Step 6 (Document Uploads) - optional step, always valid
     return true;
   };
 
   const isStep7Valid = () => {
-    // Step 7 (Compliance Documents) - at least one document should be checked
-    const { complianceDocuments } = formData;
-    return Object.values(complianceDocuments).some(checked => checked === true);
+    return true; // Documents are optional
   };
 
   const isCurrentStepValid = () => {
@@ -399,6 +339,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
       case 5: return isStep5Valid();
       case 6: return isStep6Valid();
       case 7: return isStep7Valid();
+
       default: return false;
     }
   };
@@ -424,8 +365,8 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
           {/* Progress Bar */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-400">Step {currentStep} of 7</span>
-              <span className="text-sm text-gray-400">{Math.round((currentStep / 7) * 100)}%</span>
+              <span className="text-sm text-gray-400">Step {currentStep} of 5</span>
+              <span className="text-sm text-gray-400">{Math.round((currentStep / 5) * 100)}%</span>
             </div>
             <div className="w-full bg-gray-700 rounded-full h-2">
               <div
@@ -443,7 +384,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Company Name *</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Company Name</label>
                     <input
                       type="text"
                       value={formData.carrierInfo.companyName}
@@ -462,7 +403,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">MC Number *</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">MC Number</label>
                     <input
                       type="text"
                       value={formData.carrierInfo.mcNumber}
@@ -472,19 +413,18 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">DOT Number *</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">DOT Number</label>
                     <input
                       type="text"
                       value={formData.carrierInfo.dotNumber}
                       onChange={(e) => handleInputChange('carrierInfo', 'dotNumber', e.target.value)}
                       className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Address *</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Address</label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <input
                       type="text"
@@ -523,7 +463,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Phone *</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Phone</label>
                     <input
                       type="tel"
                       value={formData.carrierInfo.phone}
@@ -533,7 +473,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Email *</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
                     <input
                       type="email"
                       value={formData.carrierInfo.email}
@@ -553,80 +493,41 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Full Name *</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Driver Name</label>
                     <input
                       type="text"
-                      value={formData.ownerDriverInfo.fullName}
-                      onChange={(e) => handleInputChange('ownerDriverInfo', 'fullName', e.target.value)}
+                      value={formData.ownerDriverInfo.driverName}
+                      onChange={(e) => handleInputChange('ownerDriverInfo', 'driverName', e.target.value)}
                       className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Personal Number</label>
-                    <input
-                      type="text"
-                      value={formData.ownerDriverInfo.personalNumber}
-                      onChange={(e) => handleInputChange('ownerDriverInfo', 'personalNumber', e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Phone *</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Driver Phone Number</label>
                     <input
                       type="tel"
-                      value={formData.ownerDriverInfo.phone}
-                      onChange={(e) => handleInputChange('ownerDriverInfo', 'phone', e.target.value)}
+                      value={formData.ownerDriverInfo.driverPhone}
+                      onChange={(e) => handleInputChange('ownerDriverInfo', 'driverPhone', e.target.value)}
                       className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Email *</label>
-                    <input
-                      type="email"
-                      value={formData.ownerDriverInfo.email}
-                      onChange={(e) => handleInputChange('ownerDriverInfo', 'email', e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Date of Birth</label>
-                    <input
-                      type="date"
-                      value={formData.ownerDriverInfo.dateOfBirth}
-                      onChange={(e) => handleInputChange('ownerDriverInfo', 'dateOfBirth', e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">SSN</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Owner Name (if any)</label>
                     <input
                       type="text"
-                      value={formData.ownerDriverInfo.ssn}
-                      onChange={(e) => handleInputChange('ownerDriverInfo', 'ssn', e.target.value)}
+                      value={formData.ownerDriverInfo.ownerName}
+                      onChange={(e) => handleInputChange('ownerDriverInfo', 'ownerName', e.target.value)}
                       className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">CDL Number *</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Owner Phone Number (if any)</label>
                     <input
-                      type="text"
-                      value={formData.ownerDriverInfo.cdlNumber}
-                      onChange={(e) => handleInputChange('ownerDriverInfo', 'cdlNumber', e.target.value)}
+                      type="tel"
+                      value={formData.ownerDriverInfo.ownerPhone}
+                      onChange={(e) => handleInputChange('ownerDriverInfo', 'ownerPhone', e.target.value)}
                       className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">CDL Expiry *</label>
-                    <input
-                      type="date"
-                      value={formData.ownerDriverInfo.cdlExpiry}
-                      onChange={(e) => handleInputChange('ownerDriverInfo', 'cdlExpiry', e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
                     />
                   </div>
                 </div>
@@ -640,7 +541,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Truck Type *</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Truck Type</label>
                     <select
                       value={formData.truckEquipmentInfo.truckType}
                       onChange={(e) => handleInputChange('truckEquipmentInfo', 'truckType', e.target.value)}
@@ -657,7 +558,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Weight Capacity (lbs) *</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Weight Capacity (lbs)</label>
                     <input
                       type="number"
                       value={formData.truckEquipmentInfo.weightCapacity}
@@ -669,38 +570,47 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Truck Dimensions (feet) *</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Truck Dimensions (feet)</label>
                   <div className="grid grid-cols-3 gap-4">
-                    <input
-                      type="number"
-                      placeholder="Length"
-                      value={formData.truckEquipmentInfo.size.length}
-                      onChange={(e) => handleNestedInputChange('truckEquipmentInfo', 'size', 'length', e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                    <input
-                      type="number"
-                      placeholder="Width"
-                      value={formData.truckEquipmentInfo.size.width}
-                      onChange={(e) => handleNestedInputChange('truckEquipmentInfo', 'size', 'width', e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                    <input
-                      type="number"
-                      placeholder="Height"
-                      value={formData.truckEquipmentInfo.size.height}
-                      onChange={(e) => handleNestedInputChange('truckEquipmentInfo', 'size', 'height', e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1">Length</label>
+                      <input
+                        type="number"
+                        placeholder="Length"
+                        value={formData.truckEquipmentInfo.size.length}
+                        onChange={(e) => handleNestedInputChange('truckEquipmentInfo', 'size', 'length', e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1">Width</label>
+                      <input
+                        type="number"
+                        placeholder="Width"
+                        value={formData.truckEquipmentInfo.size.width}
+                        onChange={(e) => handleNestedInputChange('truckEquipmentInfo', 'size', 'width', e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1">Height</label>
+                      <input
+                        type="number"
+                        placeholder="Height"
+                        value={formData.truckEquipmentInfo.size.height}
+                        onChange={(e) => handleNestedInputChange('truckEquipmentInfo', 'size', 'height', e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">License Plate *</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">License Plate</label>
                     <input
                       type="text"
                       value={formData.truckEquipmentInfo.licensePlate}
@@ -710,7 +620,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">License State *</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">License State</label>
                     <input
                       type="text"
                       value={formData.truckEquipmentInfo.licenseState}
@@ -720,7 +630,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">VIN *</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">VIN</label>
                     <input
                       type="text"
                       value={formData.truckEquipmentInfo.vin}
@@ -730,7 +640,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Year *</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Year</label>
                     <input
                       type="number"
                       value={formData.truckEquipmentInfo.year}
@@ -740,17 +650,17 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Make *</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Truck Number</label>
                     <input
                       type="text"
-                      value={formData.truckEquipmentInfo.make}
-                      onChange={(e) => handleInputChange('truckEquipmentInfo', 'make', e.target.value)}
+                      value={formData.truckEquipmentInfo.truckNumber}
+                      onChange={(e) => handleInputChange('truckEquipmentInfo', 'truckNumber', e.target.value)}
                       className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Model *</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Model</label>
                     <input
                       type="text"
                       value={formData.truckEquipmentInfo.model}
@@ -770,7 +680,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Dispatch Fee (%) *</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Dispatch Fee (%)</label>
                     <input
                       type="number"
                       min="0"
@@ -782,7 +692,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Payment Terms *</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Payment Terms</label>
                     <select
                       value={formData.paymentBillingInfo.paymentTerms}
                       onChange={(e) => handleInputChange('paymentBillingInfo', 'paymentTerms', e.target.value)}
@@ -796,45 +706,17 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Preferred Payment Method *</label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Preferred Payment Method</label>
                     <select
                       value={formData.paymentBillingInfo.preferredPaymentMethod}
                       onChange={(e) => handleInputChange('paymentBillingInfo', 'preferredPaymentMethod', e.target.value)}
                       className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     >
-                      <option value="Direct Deposit">Direct Deposit</option>
-                      <option value="Check">Check</option>
-                      <option value="ACH Transfer">ACH Transfer</option>
-                      <option value="Wire Transfer">Wire Transfer</option>
+                      <option value="Zelle">Zelle</option>
+                      <option value="Stripe">Stripe</option>
+                      <option value="Cash App">Cash App</option>
                     </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Bank Information</label>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <input
-                      type="text"
-                      placeholder="Bank Name"
-                      value={formData.paymentBillingInfo.bankInfo.bankName}
-                      onChange={(e) => handleNestedInputChange('paymentBillingInfo', 'bankInfo', 'bankName', e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Account Number"
-                      value={formData.paymentBillingInfo.bankInfo.accountNumber}
-                      onChange={(e) => handleNestedInputChange('paymentBillingInfo', 'bankInfo', 'accountNumber', e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Routing Number"
-                      value={formData.paymentBillingInfo.bankInfo.routingNumber}
-                      onChange={(e) => handleNestedInputChange('paymentBillingInfo', 'bankInfo', 'routingNumber', e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
                   </div>
                 </div>
               </div>
@@ -935,16 +817,13 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
                     { key: 'insuranceCertificate', label: 'Copy of Insurance Certificate', required: true },
                     { key: 'w9Form', label: 'Copy of W-9 Form', required: true },
                     { key: 'noa', label: 'Copy of NOA (Notice of Assignment)', required: true },
-                    { key: 'dispatchServiceAgreement', label: 'Signed Dispatch Service Agreement', required: true },
                     { key: 'cdlCopy', label: 'Copy of CDL', required: true },
-                    { key: 'medicalCard', label: 'Medical Card', required: true },
-                    { key: 'drugTestResults', label: 'Drug Test Results', required: true }
                   ].map(doc => (
                     <div key={doc.key} className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
                       <div className="flex items-center space-x-3">
                         <div className={`w-3 h-3 rounded-full ${formData.complianceDocuments[doc.key] ? 'bg-green-500' : 'bg-red-500'}`}></div>
                         <span className="text-gray-300">{doc.label}</span>
-                        {doc.required && <span className="text-red-400 text-sm">*</span>}
+                        {doc.required && <span className="text-red-400 text-sm"></span>}
                       </div>
                       <div className="flex items-center space-x-2">
                         <input
@@ -963,10 +842,10 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
                         <label
                           htmlFor={`upload-${doc.key}`}
                           className={`px-3 py-1 text-sm rounded cursor-pointer ${uploadingDocuments[doc.key]
+                            ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                            : !driverToEdit
                               ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                              : !driverToEdit
-                                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                                : 'bg-blue-600 text-white hover:bg-blue-700'
+                              : 'bg-blue-600 text-white hover:bg-blue-700'
                             }`}
                         >
                           {uploadingDocuments[doc.key] ? 'Uploading...' : 'Upload'}
@@ -997,10 +876,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
                     { key: 'insuranceCertificate', label: 'Copy of Insurance Certificate' },
                     { key: 'w9Form', label: 'Copy of W-9 Form' },
                     { key: 'noa', label: 'Copy of NOA (Notice of Assignment)' },
-                    { key: 'dispatchServiceAgreement', label: 'Signed Dispatch Service Agreement' },
-                    { key: 'cdlCopy', label: 'Copy of CDL' },
-                    { key: 'medicalCard', label: 'Medical Card' },
-                    { key: 'drugTestResults', label: 'Drug Test Results' }
+                    { key: 'cdlCopy', label: 'Copy of CDL' }
                   ].map(doc => (
                     <label key={doc.key} className="flex items-center space-x-3 p-3 bg-gray-700 rounded-lg">
                       <input

@@ -322,6 +322,42 @@ class ApiService {
     });
     return this.handleResponse(response);
   }
+
+  // Lead APIs
+  async createLead(leadData) {
+    const response = await fetch(`${this.baseURL}/leads`, {
+      method: "POST",
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(leadData),
+    });
+    return this.handleResponse(response);
+  }
+
+  async getLeads(filters = {}) {
+    const queryString = new URLSearchParams(filters).toString();
+    const response = await fetch(`${this.baseURL}/leads${queryString ? `?${queryString}` : ''}`, {
+      method: "GET",
+      headers: this.getAuthHeaders(),
+    });
+    return this.handleResponse(response);
+  }
+
+  async updateLeadStatus(id, status, notes = '') {
+    const response = await fetch(`${this.baseURL}/leads/${id}/status`, {
+      method: "PATCH",
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ status, notes }),
+    });
+    return this.handleResponse(response);
+  }
+
+  async deleteLead(id) {
+    const response = await fetch(`${this.baseURL}/leads/${id}`, {
+      method: "DELETE",
+      headers: this.getAuthHeaders(),
+    });
+    return this.handleResponse(response);
+  }
 }
 
 // Create and export a singleton instance

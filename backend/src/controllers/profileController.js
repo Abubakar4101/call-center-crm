@@ -4,7 +4,7 @@ const dayjs = require("dayjs");
 const User = require("../models/user");
 const Staff = require("../models/staff");
 
-exports.getProfile = async(req, res) => {
+exports.getProfile = async (req, res) => {
     try {
         if (req.user.role === 'staff') {
             const staff = await Staff.findById(req.user.userId).select('-passwordHash');
@@ -30,14 +30,14 @@ exports.getProfile = async(req, res) => {
             role: 'admin',
             tenant: user.tenant,
             profilePicture: user.profilePicture || null,
-            permissions: ['payment','staff','files','dialer','scraper']
+            permissions: ['payment', 'staff', 'files', 'dialer', 'driver', 'scraper']
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 };
 
-exports.updateProfile = async(req, res) => {
+exports.updateProfile = async (req, res) => {
     try {
         const { name, email } = req.body;
         if (req.user.role === 'staff') {
@@ -58,7 +58,7 @@ exports.updateProfile = async(req, res) => {
 };
 
 // ✅ NEW: Upload profile picture
-exports.uploadProfilePicture = async(req, res) => {
+exports.uploadProfilePicture = async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 

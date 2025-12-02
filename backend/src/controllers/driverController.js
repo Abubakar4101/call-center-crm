@@ -7,14 +7,14 @@ const { generateInvoiceHtml } = require('../services/invoiceService');
 // Get all drivers for a tenant
 const getAllDrivers = async (req, res) => {
     try {
-        const { page = 1, limit = 10, status, search } = req.query;
+        const { page = 1, limit = 100, status, search } = req.query;
         const tenantId = req.user.tenantId;
 
         const drivers = await driverService.getAllDrivers(tenantId, {
             page: parseInt(page),
             limit: parseInt(limit),
-            status,
-            search
+            status: status === 'all' ? null : status,
+            search: search || null
         });
 
         res.json({
@@ -45,7 +45,7 @@ const getDriverById = async (req, res) => {
         const tenantId = req.user.tenantId;
 
         const driver = await driverService.getDriverById(id, tenantId);
-        
+
         if (!driver) {
             return res.status(404).json({
                 success: false,
@@ -77,7 +77,7 @@ const createDriver = async (req, res) => {
         };
 
         const driver = await driverService.createDriver(driverData);
-        
+
         res.status(201).json({
             success: true,
             message: 'Driver registered successfully',
@@ -100,8 +100,28 @@ const updateDriver = async (req, res) => {
         const tenantId = req.user.tenantId;
         const updateData = req.body;
 
+        // Get current driver first to calculate gross difference
+        const currentDriver = await driverService.getDriverById(id, tenantId);
+        if (!currentDriver) {
+            return res.status(404).json({
+                success: false,
+                message: 'Driver not found'
+            });
+        }
+
+        // Calculate gross if loadDetails.amount is being updated
+        if (updateData.loadDetails && updateData.loadDetails.amount !== undefined) {
+            const newLoadAmount = parseFloat(updateData.loadDetails.amount) || 0;
+            const oldLoadAmount = parseFloat(currentDriver.loadDetails?.amount) || 0;
+
+            // Calculate gross: add new amount, subtract old amount (if updating existing load)
+            // This handles both new loads and updates to existing loads
+            const grossDifference = newLoadAmount - oldLoadAmount;
+            updateData.gross = Math.max(0, (currentDriver.gross || 0) + grossDifference);
+        }
+
         const driver = await driverService.updateDriver(id, tenantId, updateData);
-        
+
         if (!driver) {
             return res.status(404).json({
                 success: false,
@@ -114,12 +134,13 @@ const updateDriver = async (req, res) => {
             const hasLoaderEnabled = Boolean(updateData.hasLoader || driver.hasLoader);
             const lInfo = updateData.loaderInfo || driver.loaderInfo || {};
             const percentage = typeof lInfo.percentage === 'number' ? lInfo.percentage : driver.loaderInfo?.percentage;
-            const totalPayment = typeof lInfo.totalPayment === 'number' ? lInfo.totalPayment : driver.loaderInfo?.totalPayment;
+            const loadDetails = updateData.loadDetails || driver.loadDetails || {};
+            const loadAmount = typeof loadDetails.amount === 'number' ? parseFloat(loadDetails.amount) : parseFloat(driver.loadDetails?.amount || 0);
 
-            if (hasLoaderEnabled && percentage > 0 && totalPayment > 0) {
-                const amount = (totalPayment * percentage) / 100;
+            if (hasLoaderEnabled && updateData.shouldSendInvoice && percentage > 0 && loadAmount > 0) {
+                const amount = (loadAmount * percentage) / 100;
                 const customer_email = driver.ownerDriverInfo?.email || driver.carrierInfo?.email;
-                const title = `Loader Commission` ;
+                const title = `Loader Commission`;
 
                 const session = await createCheckoutSession({
                     tenantId,
@@ -144,7 +165,7 @@ const updateDriver = async (req, res) => {
                     recipientName: driver.ownerDriverInfo.fullName || '',
                     recipientEmail: customer_email,
                     checkoutUrl: session.url,
-                    companyName: process.env.COMPANY_NAME || 'SkyInfinit',
+                    companyName: process.env.COMPANY_NAME,
                 });
                 await sendEmail({
                     to: customer_email,
@@ -179,7 +200,7 @@ const updateDriverStatus = async (req, res) => {
         const tenantId = req.user.tenantId;
 
         const driver = await driverService.updateDriverStatus(id, tenantId, status, notes, req.user.userId);
-        
+
         if (!driver) {
             return res.status(404).json({
                 success: false,
@@ -209,7 +230,7 @@ const deleteDriver = async (req, res) => {
         const tenantId = req.user.tenantId;
 
         const driver = await driverService.deleteDriver(id, tenantId);
-        
+
         if (!driver) {
             return res.status(404).json({
                 success: false,
@@ -246,7 +267,7 @@ const uploadDocument = async (req, res) => {
         }
 
         const driver = await driverService.uploadDocument(id, tenantId, documentType, req.file);
-        
+
         if (!driver) {
             return res.status(404).json({
                 success: false,

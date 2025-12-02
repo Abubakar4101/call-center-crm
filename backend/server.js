@@ -19,6 +19,7 @@ const dialerRoutes = require("./src/routes/dialerRoutes");
 const profileRoutes = require("./src/routes/profileRoutes");
 const scrapperRoutes = require("./src/routes/scrapperRoutes");
 const driverRoutes = require("./src/routes/driverRoutes");
+const leadRoutes = require("./src/routes/leadRoutes");
 
 
 const app = express();
@@ -30,8 +31,8 @@ const corsOptions = {
     origin: "*",
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     allowedHeaders: "Content-Type, Authorization"
-  };
-  
+};
+
 app.use(cors(corsOptions));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -46,7 +47,7 @@ app.use("/assets/profile-pics", express.static(path.join(__dirname, "assets/prof
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.get('/api/health', (req, res) => {
-    res.status(200).json({ 
+    res.status(200).json({
         status: 'healthy',
         timestamp: new Date().toISOString(),
         uptime: process.uptime()
@@ -61,6 +62,9 @@ app.use("/api/dialer", dialerRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/run-scrapper", scrapperRoutes);
 app.use("/api/drivers", driverRoutes);
+app.use("/api/leads", leadRoutes);
+
+
 
 
 
@@ -68,5 +72,46 @@ app.use("/api/drivers", driverRoutes);
 //     socket.on('joinTenant', (tenantId) => socket.join(String(tenantId)));
 // });
 
+// Initialize cron job for meeting reminders
+const cron = require('node-cron');
+const leadService = require('./src/services/leadService');
+const { sendMeetingReminderEmails } = require('./src/services/emailService');
+
+// Run every 5 minutes to check for upcoming meetings
+cron.schedule('*/5 * * * *', async () => {
+    try {
+        console.log('Checking for upcoming meetings...');
+        const upcomingMeetings = await leadService.getUpcomingMeetings(30);
+
+        for (const meeting of upcomingMeetings) {
+            try {
+                // Only send reminder emails if contact has a valid email
+                if (meeting.contactEmail && meeting.contactEmail !== 'no-email@example.com') {
+                    // Send reminder emails
+                    await sendMeetingReminderEmails(
+                        meeting.scheduledByName,
+                        meeting.scheduledByEmail,
+                        meeting.contactName,
+                        meeting.contactPhone,
+                        meeting.contactEmail,
+                        meeting.meetingDate
+                    );
+                    console.log(`Reminder sent for meeting ${meeting._id}`);
+                } else {
+                    console.log(`Skipping reminder for meeting ${meeting._id} - no valid email`);
+                }
+
+                // Mark reminder as sent regardless
+                await leadService.markReminderSent(meeting._id);
+            } catch (error) {
+                console.error(`Error sending reminder for meeting ${meeting._id}:`, error);
+            }
+        }
+    } catch (error) {
+        console.error('Error in reminder cron job:', error);
+    }
+});
+
+console.log('Meeting reminder cron job initialized');
 
 app.listen(process.env.PORT || 5000, () => console.log('Server started'));

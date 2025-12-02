@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useToast } from '../contexts/ToastContext';
 import AddLoaderModal from '../components/AddLoaderModal';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const LoaderCarrierPage = () => {
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [monthFilter, setMonthFilter] = useState('all'); // New month filter
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingDriver, setEditingDriver] = useState(null);
   const [pendingUpdates, setPendingUpdates] = useState({});
@@ -61,7 +63,7 @@ const LoaderCarrierPage = () => {
         },
         body: JSON.stringify({ [field]: value }),
       });
-      
+
       const data = await response.json();
       if (data.success) {
         success('Field updated successfully');
@@ -83,7 +85,7 @@ const LoaderCarrierPage = () => {
   const handleFieldUpdate = (driverId, field, value) => {
     // For debounced fields, use debounced update
     const debouncedFields = ['loaderInfo.agentName', 'loaderInfo.percentage', 'loaderInfo.carrierPacket'];
-    
+
     if (debouncedFields.includes(field)) {
       // Update local state immediately for UI responsiveness
       setDrivers(prev => prev.map(driver => {
@@ -120,63 +122,138 @@ const LoaderCarrierPage = () => {
   };
 
   const filteredDrivers = drivers.filter(driver => {
-    const matchesSearch = 
+    const matchesSearch =
       driver.carrierInfo?.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       driver.carrierInfo?.mcNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       driver.ownerDriverInfo?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      driver.loaderInfo?.agentName?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    // Since we're only showing active drivers, we don't need status filter
-    return matchesSearch && driver.hasLoader;
+      driver.loaderInfo?.agentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      driver.loadDetails?.from?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      driver.loadDetails?.to?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      driver.loadDetails?.loadDetails?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // Filter by month if not 'all'
+    let matchesMonth = true;
+    if (monthFilter !== 'all' && driver.loadDetails?.puDate) {
+      const loadDate = new Date(driver.loadDetails.puDate);
+      const now = new Date();
+
+      switch (monthFilter) {
+        case 'current':
+          matchesMonth = loadDate.getMonth() === now.getMonth() && loadDate.getFullYear() === now.getFullYear();
+          break;
+        case 'last':
+          const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          matchesMonth = loadDate.getMonth() === lastMonth.getMonth() && loadDate.getFullYear() === lastMonth.getFullYear();
+          break;
+        case 'last3':
+          const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+          matchesMonth = loadDate >= threeMonthsAgo;
+          break;
+        case 'last6':
+          const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+          matchesMonth = loadDate >= sixMonthsAgo;
+          break;
+        default:
+          matchesMonth = true;
+      }
+    }
+
+    return matchesSearch && driver.hasLoader && matchesMonth;
   });
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (driver) => {
+    // Since this page only shows active drivers (Approved + Gross > 300), 
+    // we can default to green if it meets criteria
+    if (driver.status === 'Approved' && driver.gross > 300) {
+      return 'bg-green-100 text-green-800';
+    }
     const colors = {
       Active: 'bg-green-100 text-green-800',
       'N/A': 'bg-gray-100 text-gray-800',
-      Pending: 'bg-yellow-100 text-yellow-800'
+      Pending: 'bg-yellow-100 text-yellow-800',
+      'Truck out of Order': 'bg-orange-100 text-orange-800',
+      'Inactive MC': 'bg-gray-100 text-gray-800'
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return colors[driver.status] || 'bg-gray-100 text-gray-800';
   };
 
   const getDocumentsColor = (documents) => {
     const colors = {
-      Received: 'bg-green-100 text-green-800',
-      Missing: 'bg-red-100 text-red-800',
-      'No Docs': 'bg-gray-100 text-gray-800'
+      'No Docs': 'bg-red-100 text-red-800',
+      'Partial Docs': 'bg-yellow-100 text-yellow-800',
+      'All Docs': 'bg-green-100 text-green-800',
     };
     return colors[documents] || 'bg-gray-100 text-gray-800';
   };
 
   const getReviewsColor = (reviews) => {
     const colors = {
-      'Good Response': 'bg-green-100 text-green-800',
-      'Booked for this week': 'bg-blue-100 text-blue-800',
       'Average Response': 'bg-yellow-100 text-yellow-800',
       'Not Responsing': 'bg-red-100 text-red-800',
-      'Truck out of Order': 'bg-orange-100 text-orange-800',
-      'Inactive MC': 'bg-gray-100 text-gray-800'
+      'Good Response': 'bg-green-100 text-green-800',
     };
     return colors[reviews] || 'bg-gray-100 text-gray-800';
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+  // Calculate monthly loads ratio based on filtered drivers
+  const getMonthlyLoadsRatio = () => {
+    const last6Months = [];
+    const now = new Date();
+
+    // Use filteredDrivers instead of all drivers
+    const driversToUse = filteredDrivers;
+
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthName = date.toLocaleDateString('en-US', { month: 'short' });
+
+      // Count loads (drivers with loadDetails) in this month
+      const loadsInMonth = driversToUse.filter(driver => {
+        if (!driver.loadDetails || !driver.loadDetails.puDate) return false;
+        const loadDate = new Date(driver.loadDetails.puDate);
+        return loadDate.getMonth() === date.getMonth() &&
+          loadDate.getFullYear() === date.getFullYear();
+      }).length;
+
+      // Count total active drivers in this month
+      let allDriversCount = 0;
+      let activeDriversCount = 0;
+
+      driversToUse.forEach(d => {
+        const r = new Date(d.registrationDate);
+        if (r.getFullYear() > date.getFullYear() || (r.getFullYear() === date.getFullYear() && r.getMonth() > date.getMonth())) return;
+
+        allDriversCount++;
+
+        if (window.isActiveDriver(d.loadDetails?.amount, d.loaderInfo?.percentage, d.status)) activeDriversCount++;
+      });
+
+
+      const ratio = allDriversCount > 0
+        ? Math.round((loadsInMonth / allDriversCount) * 100)
+        : 0;
+
+      last6Months.push({
+        month: monthName,
+        loads: loadsInMonth,
+        allDrivers: allDriversCount,
+        activeDrivers: activeDriversCount,
+        ratio: ratio
+      });
+    }
+
+    return last6Months;
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-100">Loader/Carrier</h1>
+          <h1 className="text-2xl font-bold text-gray-100">Loads</h1>
           <p className="text-gray-400">Manage loader details for active drivers</p>
         </div>
-        <button
+        {/* <button
           onClick={() => setShowAddModal(true)}
           className="bg-blue-600 cursor-pointer hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
         >
@@ -184,193 +261,202 @@ const LoaderCarrierPage = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
           <span>Set Loader Details</span>
-        </button>
+        </button> */}
       </div>
 
-      {/* Search */}
+      {/* Search and Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1">
           <input
             type="text"
-            placeholder="Search active drivers..."
+            placeholder="Search by driver, company, MC, agent, or load location..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
+        <select
+          value={monthFilter}
+          onChange={(e) => setMonthFilter(e.target.value)}
+          className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="all">All Time</option>
+          <option value="current">Current Month</option>
+          <option value="last">Last Month</option>
+          <option value="last3">Last 3 Months</option>
+          <option value="last6">Last 6 Months</option>
+        </select>
       </div>
 
-      {/* Loader/Carrier Table */}
-      <div className="bg-gray-800 rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-max">
-            <thead className="bg-gray-700">
-              <tr>
-                <th className="px-2 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-12">Sr#</th>
-                <th className="px-2 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-20">Date</th>
-                <th className="px-2 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-32">Agent Name</th>
-                <th className="px-2 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-40">Driver Name</th>
-                <th className="px-2 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-24">Truck Type</th>
-                <th className="px-2 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-16">%</th>
-                <th className="px-2 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-40">Company Name</th>
-                <th className="px-2 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-20">State</th>
-                <th className="px-2 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-24">M.C</th>
-                <th className="px-2 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-32">Phone No.</th>
-                <th className="px-2 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-40">Email</th>
-                <th className="px-2 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-32">Documents</th>
-                <th className="px-2 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-32">Carrier Packet</th>
-                <th className="px-2 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-24">Status</th>
-                <th className="px-2 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-48">Reviews</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-700">
-              {filteredDrivers.map((driver, index) => (
-                <tr key={driver._id} className="hover:bg-gray-700">
-                  <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-300 text-center">
-                    {index + 1}
-                  </td>
-                  <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-300">
-                    {new Date(driver.registrationDate).toLocaleDateString()}
-                  </td>
-                  <td className="px-2 py-4 whitespace-nowrap">
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={driver.loaderInfo?.agentName || ''}
-                        onChange={(e) => handleFieldUpdate(driver._id, 'loaderInfo.agentName', e.target.value)}
-                        className="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        placeholder="Enter agent name"
-                      />
-                      {pendingUpdates[`${driver._id}-loaderInfo.agentName`] && (
-                        <div className="absolute right-1 top-1/2 transform -translate-y-1/2">
-                          <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-300">
-                    <div className="truncate" title={driver.ownerDriverInfo?.fullName}>
-                      {driver.ownerDriverInfo?.fullName}
-                    </div>
-                  </td>
-                  <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-300">
-                    <div className="truncate" title={driver.truckEquipmentInfo?.truckType}>
-                      {driver.truckEquipmentInfo?.truckType}
-                    </div>
-                  </td>
-                  <td className="px-2 py-4 whitespace-nowrap">
-                    <div className="relative">
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={driver.loaderInfo?.percentage || 0}
-                        onChange={(e) => handleFieldUpdate(driver._id, 'loaderInfo.percentage', parseInt(e.target.value) || 0)}
-                        className="w-16 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      />
-                      {pendingUpdates[`${driver._id}-loaderInfo.percentage`] && (
-                        <div className="absolute -right-1 top-1/2 transform -translate-y-1/2">
-                          <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-300">
-                    <div className="truncate" title={driver.carrierInfo?.companyName}>
-                      {driver.carrierInfo?.companyName}
-                    </div>
-                  </td>
-                  <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-300">
-                    <div className="truncate" title={driver.carrierInfo?.address?.state}>
-                      {driver.carrierInfo?.address?.state}
-                    </div>
-                  </td>
-                  <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-300">
-                    <div className="truncate" title={driver.carrierInfo?.mcNumber}>
-                      {driver.carrierInfo?.mcNumber}
-                    </div>
-                  </td>
-                  <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-300">
-                    <div className="truncate" title={driver.carrierInfo?.phone}>
-                      {driver.carrierInfo?.phone}
-                    </div>
-                  </td>
-                  <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-300">
-                    <div className="truncate" title={driver.carrierInfo?.email}>
-                      {driver.carrierInfo?.email}
-                    </div>
-                  </td>
-                  <td className="px-2 py-4 whitespace-nowrap">
-                    <select
-                      value={driver.loaderInfo?.documents || 'No Docs'}
-                      onChange={(e) => handleFieldUpdate(driver._id, 'loaderInfo.documents', e.target.value)}
-                      className="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 min-w-[120px] z-10"
-                    >
-                      <option value="Received">Received</option>
-                      <option value="Missing">Missing</option>
-                      <option value="No Docs">No Docs</option>
-                    </select>
-                  </td>
-                  <td className="px-2 py-4 whitespace-nowrap">
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={driver.loaderInfo?.carrierPacket || ''}
-                        onChange={(e) => handleFieldUpdate(driver._id, 'loaderInfo.carrierPacket', e.target.value)}
-                        className="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        placeholder="Enter carrier packet"
-                      />
-                      {pendingUpdates[`${driver._id}-loaderInfo.carrierPacket`] && (
-                        <div className="absolute right-1 top-1/2 transform -translate-y-1/2">
-                          <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-2 py-4 whitespace-nowrap">
-                    <select
-                      value={driver.status}
-                      onChange={(e) => handleFieldUpdate(driver._id, 'status', e.target.value)}
-                      className="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 min-w-[100px] z-10"
-                    >
-                      <option value="Active">Active</option>
-                      <option value="N/A">N/A</option>
-                      <option value="Pending">Pending</option>
-                    </select>
-                  </td>
-                  <td className="px-2 py-4 whitespace-nowrap">
-                    <select
-                      value={driver.loaderInfo?.reviews || 'Average Response'}
-                      onChange={(e) => handleFieldUpdate(driver._id, 'loaderInfo.reviews', e.target.value)}
-                      className="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 min-w-[180px] z-10"
-                    >
-                      <option value="Average Response">Average Response</option>
-                      <option value="Booked for this week">Booked for this week</option>
-                      <option value="Good Response">Good Response</option>
-                      <option value="Not Responsing">Not Responsing</option>
-                      <option value="Truck out of Order">Truck out of Order</option>
-                      <option value="Inactive MC">Inactive MC</option>
-                    </select>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Total Gross Amount and Agent Earning Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-gray-800 p-6 rounded-lg">
+          <div className="text-sm text-gray-400 mb-2">Total Gross Amount</div>
+          <div className="text-3xl font-bold text-green-400">
+            ${filteredDrivers
+              .filter(d => d.loadDetails && d.loadDetails.amount)
+              .reduce((sum, d) => sum + (parseFloat(d.loadDetails.amount) || 0), 0)
+              .toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+          <div className="text-xs text-gray-500 mt-2">
+            Sum of all load amounts
+          </div>
+        </div>
+        <div className="bg-gray-800 p-6 rounded-lg">
+          <div className="text-sm text-gray-400 mb-2">Agent Earning</div>
+          <div className="text-3xl font-bold text-blue-400">
+            ${filteredDrivers
+              .filter(d => d.loadDetails && d.loadDetails.amount && d.loaderInfo?.percentage)
+              .reduce((sum, d) => {
+                const loadAmount = parseFloat(d.loadDetails.amount) || 0;
+                const percentage = parseFloat(d.loaderInfo.percentage) || 0;
+                const earning = (loadAmount * percentage) / 100;
+                return sum + earning;
+              }, 0)
+              .toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+          <div className="text-xs text-gray-500 mt-2">
+            Total commission from all loads
+          </div>
         </div>
       </div>
 
-      {filteredDrivers.length === 0 && (
-        <div className="text-center py-12">
-          <div className="text-gray-400 text-lg">No active drivers found</div>
-          <div className="text-gray-500 text-sm">Only active drivers from the Drivers tab are shown here</div>
+      {/* Monthly Loads Ratio */}
+      <div className="bg-gray-800 rounded-lg p-6">
+        <h2 className="text-xl font-bold text-white mb-4">Monthly Loads Ratio</h2>
+        <div className="h-80 mt-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={getMonthlyLoadsRatio()}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis dataKey="month" stroke="#9CA3AF" />
+              <YAxis stroke="#9CA3AF" />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '8px' }}
+                labelStyle={{ color: '#F3F4F6' }}
+              />
+              <Legend wrapperStyle={{ color: '#F3F4F6' }} />
+              <Bar dataKey="loads" fill="#3B82F6" name="Loads" />
+              <Bar dataKey="activeDrivers" fill="#10B981" name="Active Drivers" />
+              <Bar dataKey="ratio" fill="#F59E0B" name="Ratio %" />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-gray-700 p-3 rounded-lg">
+            <div className="text-sm text-gray-400">Total Loads</div>
+            <div className="text-2xl font-bold text-blue-400">
+              {filteredDrivers.filter(d => d.loadDetails && d.loadDetails.puDate).length}
+            </div>
+          </div>
+          <div className="bg-gray-700 p-3 rounded-lg">
+            <div className="text-sm text-gray-400">Active Drivers with Loads</div>
+            <div className="text-2xl font-bold text-green-400">
+              {filteredDrivers.filter(d => {
+                return d.hasLoader && d.loadDetails && d.loadDetails.puDate && window.isActiveDriver(d.loadDetails?.amount, d.loaderInfo?.percentage, d.status);
+              }).length}
+            </div>
+          </div>
+          <div className="bg-gray-700 p-3 rounded-lg">
+            <div className="text-sm text-gray-400">Overall Load Ratio</div>
+            <div className="text-2xl font-bold text-yellow-400">
+              {filteredDrivers.length > 0
+                ? Math.round((filteredDrivers.filter(d => d.hasLoader && d.loadDetails && d.loadDetails.puDate).length / filteredDrivers.length) * 100)
+                : 0}%
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-12 text-gray-400">Loading drivers...</div>
+      ) : (
+        <>
+          {/* Loader/Carrier Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {
+              filteredDrivers.map((driver, index) => (
+                <div
+                  key={driver._id}
+                  onClick={() => {
+                    setEditingDriver(driver);
+                    setShowAddModal(true);
+                  }}
+                  className="bg-gray-800 rounded-lg p-6 cursor-pointer hover:bg-gray-700 transition-colors border border-gray-700"
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-white mb-1">
+                        {driver.ownerDriverInfo?.driverName || driver.ownerDriverInfo?.fullName}
+                      </h3>
+                      <p className="text-sm text-gray-400">
+                        {driver.carrierInfo?.companyName}
+                      </p>
+                    </div>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(driver)}`}>
+                      {window.isActiveDriver(driver.loadDetails?.amount, driver.loaderInfo?.percentage, driver.status) ? 'Active' : driver.status}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center text-sm text-gray-300">
+                      <span className="text-gray-500 mr-2">Agent:</span>
+                      <span>{driver.loaderInfo?.agentName || 'N/A'}</span>
+                    </div>
+                    <div className="flex items-center text-sm text-gray-300">
+                      <span className="text-gray-500 mr-2">Percentage:</span>
+                      <span>{driver.loaderInfo?.percentage || 0}%</span>
+                    </div>
+                    <div className="flex items-center text-sm text-gray-300">
+                      <span className="text-gray-500 mr-2">MC:</span>
+                      <span>{driver.carrierInfo?.mcNumber}</span>
+                    </div>
+                    <div className="flex items-center text-sm text-gray-300">
+                      <span className="text-gray-500 mr-2">Truck:</span>
+                      <span>{driver.truckEquipmentInfo?.truckType}</span>
+                    </div>
+                    <div className="flex items-center text-sm text-gray-300">
+                      <span className="text-gray-500 mr-2">Carrier Packet:</span>
+                      <span className="truncate">{driver.loaderInfo?.carrierPacket || 'N/A'}</span>
+                    </div>
+                    <div className="flex items-center text-sm text-gray-400">
+                      <span className="text-gray-500 mr-2">Date:</span>
+                      <span>{new Date(driver.registrationDate).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getDocumentsColor(driver.loaderInfo?.documents || 'No Docs')}`}>
+                      {driver.loaderInfo?.documents || 'No Docs'}
+                    </span>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getReviewsColor(driver.loaderInfo?.reviews || 'Average Response')}`}>
+                      {driver.loaderInfo?.reviews || 'Average Response'}
+                    </span>
+                  </div>
+                </div>
+              ))
+            }
+          </div>
+
+          {
+            filteredDrivers.length === 0 && (
+              <div className="text-center py-12">
+                <div className="text-gray-400 text-lg">No active drivers found</div>
+                <div className="text-gray-500 text-sm">Only active drivers from the Drivers tab are shown here</div>
+              </div>
+            )
+          }
+        </>
       )}
 
       {/* Add Loader Modal */}
       <AddLoaderModal
         isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
+        onClose={() => {
+          setShowAddModal(false);
+          setEditingDriver(null);
+        }}
         onSuccess={handleLoaderAdded}
+        driverToEdit={editingDriver}
       />
     </div>
   );

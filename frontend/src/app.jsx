@@ -11,6 +11,7 @@ import ProfilePage from "./pages/ProfilePage.jsx";
 import DialerPage from "./pages/DialerPage.jsx";
 import DriversPage from "./pages/DriversPage.jsx";
 import LoaderCarrierPage from "./pages/LoaderCarrierPage.jsx";
+import LeadsPage from "./pages/LeadsPage.jsx";
 import { ToastProvider } from "./contexts/ToastContext.jsx";
 import ToastContainer from "./components/ToastContainer.jsx";
 
@@ -53,8 +54,9 @@ export default function App() {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="dialer" element={<DialerPage />} />{" "}
           {/* ✅ RELATIVE PATH */}
+          <Route path="leads" element={<LeadsPage />} />
           <Route path="drivers" element={<DriversPage />} />
-          <Route path="loader-carrier" element={<LoaderCarrierPage />} />
+          <Route path="loads" element={<LoaderCarrierPage />} />
         </Route>
       </Routes>
       <ToastContainer />

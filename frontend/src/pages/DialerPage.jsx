@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import apiService from "../services/api";
 import { useToast } from "../contexts/ToastContext.jsx";
+import FollowUpModal from "../components/FollowUpModal.jsx";
 
 export default function DialerPage() {
   const { success, error, warning } = useToast();
@@ -13,10 +14,37 @@ export default function DialerPage() {
   const [calling, setCalling] = useState(false);
   const [callLogs, setCallLogs] = useState([]); // store attempts / results
   const [contactHeaders, setContactHeaders] = useState([]); // store all field names from loaded file
+  const [showFollowUpModal, setShowFollowUpModal] = useState(false);
 
 
   useEffect(() => {
     fetchFiles();
+    // Restore previous state from localStorage
+    const savedFileId = localStorage.getItem('dialerSelectedFileId');
+    const savedContacts = localStorage.getItem('dialerContacts');
+    const savedIndex = localStorage.getItem('dialerIndex');
+    const savedHeaders = localStorage.getItem('dialerContactHeaders');
+
+    if (savedFileId) {
+      setSelectedFileId(savedFileId);
+    }
+    if (savedContacts) {
+      try {
+        setContacts(JSON.parse(savedContacts));
+      } catch (e) {
+        console.error('Error parsing saved contacts:', e);
+      }
+    }
+    if (savedIndex) {
+      setIndex(parseInt(savedIndex, 10) || 0);
+    }
+    if (savedHeaders) {
+      try {
+        setContactHeaders(JSON.parse(savedHeaders));
+      } catch (e) {
+        console.error('Error parsing saved headers:', e);
+      }
+    }
   }, []);
 
   async function fetchFiles() {
@@ -42,7 +70,7 @@ export default function DialerPage() {
       setContacts(loadedContacts);
       setIndex(0);
       setCallLogs([]);
-      
+
       // Extract all unique field names from the first contact (or all contacts)
       if (loadedContacts.length > 0) {
         const allKeys = new Set();
@@ -54,9 +82,20 @@ export default function DialerPage() {
             }
           });
         });
-        setContactHeaders(Array.from(allKeys));
+        const headers = Array.from(allKeys);
+        setContactHeaders(headers);
+
+        // Save to localStorage for persistence
+        localStorage.setItem('dialerSelectedFileId', selectedFileId);
+        localStorage.setItem('dialerContacts', JSON.stringify(loadedContacts));
+        localStorage.setItem('dialerIndex', '0');
+        localStorage.setItem('dialerContactHeaders', JSON.stringify(headers));
       } else {
         setContactHeaders([]);
+        // Clear localStorage if no contacts
+        localStorage.removeItem('dialerContacts');
+        localStorage.removeItem('dialerIndex');
+        localStorage.removeItem('dialerContactHeaders');
       }
     } catch (err) {
       console.error("loadContacts error:", err);
@@ -81,11 +120,11 @@ export default function DialerPage() {
       const token = localStorage.getItem("token") || "";
       const url = `https://voice.google.com/u/0/messages#autocall=${digitsOnly}&token=${encodeURIComponent(token)}`;
 
-        try {
-          window.open(url, "google-voice").focus();
-        } catch (e) {
-          console.error("Error opening Google Voice:", e);
-        }
+      try {
+        window.open(url, "google-voice").focus();
+      } catch (e) {
+        console.error("Error opening Google Voice:", e);
+      }
 
       setCallLogs((l) => [
         { contact, result: { message: "Opened Google Voice for auto-call" }, time: new Date().toISOString() },
@@ -118,13 +157,53 @@ export default function DialerPage() {
   }
 
   function handleNext() {
-    setIndex((i) => Math.min(i + 1, contacts.length - 1));
+    const newIndex = Math.min(index + 1, contacts.length - 1);
+    setIndex(newIndex);
+    localStorage.setItem('dialerIndex', newIndex.toString());
   }
   function handlePrev() {
-    setIndex((i) => Math.max(i - 1, 0));
+    const newIndex = Math.max(index - 1, 0);
+    setIndex(newIndex);
+    localStorage.setItem('dialerIndex', newIndex.toString());
   }
 
   const current = contacts[index] || null;
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      // Ignore if user is typing in an input field
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+        return;
+      }
+
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          handlePrev();
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          handleNext();
+          break;
+        case 'c':
+        case 'C':
+          // Only trigger if no modifier keys are pressed (exclude Ctrl+C, Cmd+C, Alt+C)
+          if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+            e.preventDefault();
+            if (current && !calling) {
+              handleCall();
+            }
+          }
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [index, contacts, current, calling]);
 
   // Function to humanize field names (e.g., operating_status -> Operating Status)
   function humanizeFieldName(fieldName) {
@@ -307,33 +386,12 @@ export default function DialerPage() {
               </p>
             </div>
             <div className="card-body space-y-4">
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  onClick={handlePrev}
-                  disabled={index === 0 || contacts.length === 0}
-                  className="btn btn-secondary"
-                >
-                  <svg
-                    className="w-4 h-4 mr-1"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 19l-7-7 7-7"
-                    />
-                  </svg>
-                  Previous
-                </button>
-
+              <div className="flex justify-center">
                 {!calling ? (
                   <button
                     onClick={handleCall}
                     disabled={!current}
-                    className="btn btn-success"
+                    className="btn btn-success w-full max-w-xs"
                   >
                     <svg
                       className="w-4 h-4 mr-1"
@@ -348,10 +406,10 @@ export default function DialerPage() {
                         d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
                       />
                     </svg>
-                    Call
+                    Call <kbd className="px-1.5 py-0.5 bg-green-300 rounded text-green-900 font-mono">Press C</kbd>
                   </button>
                 ) : (
-                  <button onClick={handleStop} className="btn btn-error">
+                  <button onClick={handleStop} className="btn btn-error w-full max-w-xs">
                     <svg
                       className="w-4 h-4 mr-1"
                       fill="none"
@@ -374,29 +432,24 @@ export default function DialerPage() {
                     Stop
                   </button>
                 )}
+              </div>
 
-                <button
-                  onClick={handleNext}
-                  disabled={
-                    index >= contacts.length - 1 || contacts.length === 0
-                  }
-                  className="btn btn-secondary"
-                >
-                  Next
-                  <svg
-                    className="w-4 h-4 ml-1"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
-                </button>
+              {/* Keyboard shortcuts hint */}
+              <div className="bg-transparent border border-blue-200 rounded-lg p-3">
+                <div className="flex flex-col items-start">
+                  <div className="flex items-center w-full">
+                    <svg className="w-5 h-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="font-semibold mb-1">Change Contact Shortcut</p>
+                  </div>
+                  <div className="text-sm text-white w-full">
+                    <ul className="flex text-sm mt-2 justify-between">
+                      <li><kbd className="px-1.5 whitespace-nowrap py-0.5 bg-white border border-blue-300 rounded text-blue-900 font-mono">← Arrow Left</kbd></li>
+                      <li><kbd className="px-1.5 whitespace-nowrap py-0.5 bg-white border border-blue-300 rounded text-blue-900 font-mono">→ Arrow Right</kbd></li>
+                    </ul>
+                  </div>
+                </div>
               </div>
 
               <div className="bg-gray-50 rounded-lg p-3">
@@ -422,12 +475,27 @@ export default function DialerPage() {
           {/* Current Contact */}
           <div className="card">
             <div className="card-header">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Current Contact
-              </h3>
-              <p className="text-sm text-gray-600 mt-1">
-                Information for the selected contact
-              </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Current Contact
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Information for the selected contact
+                  </p>
+                </div>
+                {current && (
+                  <button
+                    onClick={() => setShowFollowUpModal(true)}
+                    className="btn btn-primary flex items-center"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Follow Up
+                  </button>
+                )}
+              </div>
             </div>
             <div className="card-body">
               {current ? (
@@ -462,7 +530,7 @@ export default function DialerPage() {
                         </p>
                       </div>
                     </div>
-                    
+
                     {/* All contact fields */}
                     <div className="space-y-3">
                       {contactHeaders.length > 0 ? (
@@ -566,8 +634,8 @@ export default function DialerPage() {
                           <div className="mt-2">
                             <span
                               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${log.error
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-green-100 text-green-800"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-green-100 text-green-800"
                                 }`}
                             >
                               {log.error ? "Failed" : "Success"}
@@ -620,6 +688,13 @@ export default function DialerPage() {
           </div>
         </div>
       </div>
+
+      {/* Follow Up Modal */}
+      <FollowUpModal
+        isOpen={showFollowUpModal}
+        onClose={() => setShowFollowUpModal(false)}
+        contact={current}
+      />
     </div>
   );
 }

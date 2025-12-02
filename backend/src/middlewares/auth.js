@@ -11,16 +11,28 @@ module.exports = async function (req, res, next) {
     const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     let staff;
+    let user;
+
     if (decoded.role === "staff") {
       staff = await Staff.findById(decoded.userId);
       if (!staff) return res.status(404).json({ message: "Staff not found" });
+      user = staff;
+    } else {
+      // For tenant/admin users
+      const User = require("../models/user");
+      user = await User.findById(decoded.userId);
+      if (!user) return res.status(404).json({ message: "User not found" });
     }
 
     req.user = {
+      id: decoded.userId,
       userId: decoded.userId,
       tenantId: decoded.tenantId,
+      tenant: decoded.tenantId,
       role: decoded.role,
-      permissions: decoded.role === "staff" ? staff.permissions || [] : undefined,
+      name: user.name,
+      email: user.email,
+      permissions: decoded.role === "staff" ? staff?.permissions || [] : undefined,
     };
     const tenant = await Tenant.findById(decoded.tenantId);
     if (!tenant) return res.status(404).json({ message: "Tenant not found" });

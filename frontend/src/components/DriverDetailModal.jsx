@@ -1,6 +1,6 @@
 import React from 'react';
 
-const DriverDetailModal = ({ isOpen, onClose, driver }) => {
+const DriverDetailModal = ({ isOpen, onClose, driver, onBookLoad }) => {
   if (!isOpen || !driver) return null;
 
   const formatDate = (dateString) => {
@@ -12,7 +12,6 @@ const DriverDetailModal = ({ isOpen, onClose, driver }) => {
       Pending: 'bg-yellow-100 text-yellow-800',
       Active: 'bg-green-100 text-green-800',
       Inactive: 'bg-gray-100 text-gray-800',
-      Suspended: 'bg-red-100 text-red-800',
       Rejected: 'bg-red-100 text-red-800'
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
@@ -36,14 +35,27 @@ const DriverDetailModal = ({ isOpen, onClose, driver }) => {
 
           <div className="space-y-6">
             {/* Status and Basic Info */}
-            <div className="flex justify-between items-start">
+            <div className="flex justify-between items-start mb-6">
               <div>
                 <h3 className="text-lg font-semibold text-white">{driver.carrierInfo?.companyName}</h3>
-                <p className="text-gray-400">{driver.ownerDriverInfo?.fullName}</p>
+                <p className="text-gray-400">{driver.ownerDriverInfo?.driverName || driver.ownerDriverInfo?.fullName}</p>
               </div>
-              <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(driver.status)}`}>
-                {driver.status}
-              </span>
+              <div className="flex flex-col items-end gap-2">
+                {driver.status === 'Active' ? (
+                  <span className="inline-flex px-3 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800">
+                    Approved
+                  </span>
+                ) : (
+                  <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(driver.status)}`}>
+                    {driver.status}
+                  </span>
+                )}
+                {driver.gross && driver.gross > 300 && (
+                  <span className="inline-flex px-3 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800">
+                    Active
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Carrier Information */}
@@ -88,33 +100,25 @@ const DriverDetailModal = ({ isOpen, onClose, driver }) => {
               <h4 className="text-lg font-semibold text-white mb-3">Owner/Driver Information</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm text-gray-400">Full Name</label>
-                  <p className="text-white">{driver.ownerDriverInfo?.fullName}</p>
+                  <label className="text-sm text-gray-400">Driver Name</label>
+                  <p className="text-white">{driver.ownerDriverInfo?.driverName || driver.ownerDriverInfo?.fullName || 'N/A'}</p>
                 </div>
                 <div>
-                  <label className="text-sm text-gray-400">Personal Number</label>
-                  <p className="text-white">{driver.ownerDriverInfo?.personalNumber || 'N/A'}</p>
+                  <label className="text-sm text-gray-400">Driver Phone</label>
+                  <p className="text-white">{driver.ownerDriverInfo?.driverPhone || driver.ownerDriverInfo?.phone || 'N/A'}</p>
                 </div>
-                <div>
-                  <label className="text-sm text-gray-400">Phone</label>
-                  <p className="text-white">{driver.ownerDriverInfo?.phone}</p>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-400">Email</label>
-                  <p className="text-white">{driver.ownerDriverInfo?.email}</p>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-400">Date of Birth</label>
-                  <p className="text-white">{driver.ownerDriverInfo?.dateOfBirth ? formatDate(driver.ownerDriverInfo.dateOfBirth) : 'N/A'}</p>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-400">CDL Number</label>
-                  <p className="text-white">{driver.ownerDriverInfo?.cdlNumber}</p>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-400">CDL Expiry</label>
-                  <p className="text-white">{driver.ownerDriverInfo?.cdlExpiry ? formatDate(driver.ownerDriverInfo.cdlExpiry) : 'N/A'}</p>
-                </div>
+                {driver.ownerDriverInfo?.ownerName && (
+                  <div>
+                    <label className="text-sm text-gray-400">Owner Name</label>
+                    <p className="text-white">{driver.ownerDriverInfo?.ownerName}</p>
+                  </div>
+                )}
+                {driver.ownerDriverInfo?.ownerPhone && (
+                  <div>
+                    <label className="text-sm text-gray-400">Owner Phone</label>
+                    <p className="text-white">{driver.ownerDriverInfo?.ownerPhone}</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -145,8 +149,8 @@ const DriverDetailModal = ({ isOpen, onClose, driver }) => {
                   <p className="text-white">{driver.truckEquipmentInfo?.vin}</p>
                 </div>
                 <div>
-                  <label className="text-sm text-gray-400">Year/Make/Model</label>
-                  <p className="text-white">{driver.truckEquipmentInfo?.year} {driver.truckEquipmentInfo?.make} {driver.truckEquipmentInfo?.model}</p>
+                  <label className="text-sm text-gray-400">Year/Truck Number/Model</label>
+                  <p className="text-white">{driver.truckEquipmentInfo?.year} {driver.truckEquipmentInfo?.truckNumber || driver.truckEquipmentInfo?.make} {driver.truckEquipmentInfo?.model}</p>
                 </div>
               </div>
             </div>
@@ -166,10 +170,6 @@ const DriverDetailModal = ({ isOpen, onClose, driver }) => {
                 <div>
                   <label className="text-sm text-gray-400">Preferred Payment Method</label>
                   <p className="text-white">{driver.paymentBillingInfo?.preferredPaymentMethod}</p>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-400">Bank Name</label>
-                  <p className="text-white">{driver.paymentBillingInfo?.bankInfo?.bankName || 'N/A'}</p>
                 </div>
               </div>
             </div>
@@ -214,14 +214,11 @@ const DriverDetailModal = ({ isOpen, onClose, driver }) => {
                   { key: 'insuranceCertificate', label: 'Copy of Insurance Certificate' },
                   { key: 'w9Form', label: 'Copy of W-9 Form' },
                   { key: 'noa', label: 'Copy of NOA (Notice of Assignment)' },
-                  { key: 'dispatchServiceAgreement', label: 'Signed Dispatch Service Agreement' },
-                  { key: 'cdlCopy', label: 'Copy of CDL' },
-                  { key: 'medicalCard', label: 'Medical Card' },
-                  { key: 'drugTestResults', label: 'Drug Test Results' }
+                  { key: 'cdlCopy', label: 'Copy of CDL' }
                 ].map(doc => {
                   const hasDocument = driver.complianceDocuments?.[doc.key];
                   const documentUrl = driver.documents?.[`${doc.key}Url`];
-                  
+
                   return (
                     <div key={doc.key} className="flex items-center justify-between p-3 bg-gray-600 rounded-lg">
                       <div className="flex items-center space-x-3">
@@ -231,7 +228,7 @@ const DriverDetailModal = ({ isOpen, onClose, driver }) => {
                       <div className="flex items-center space-x-2">
                         {hasDocument && documentUrl ? (
                           <button
-                            onClick={() => window.open(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}${documentUrl}`, '_blank')}
+                            onClick={() => window.open(`${import.meta.env.VITE_API_URL?.replace('/api', '') || "http://localhost:5000"}${documentUrl}`, '_blank')}
                             className="p-2 text-blue-400 hover:text-blue-300 hover:bg-gray-500 rounded-lg transition-colors"
                             title="View Document"
                           >
@@ -284,13 +281,24 @@ const DriverDetailModal = ({ isOpen, onClose, driver }) => {
             </div>
           </div>
 
-          <div className="flex justify-end mt-6">
+          <div className="flex justify-between mt-6 pt-6 border-t border-gray-700">
             <button
               onClick={onClose}
               className="px-4 cursor-pointer py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
             >
               Close
             </button>
+            {onBookLoad && (
+              <button
+                onClick={() => {
+                  onBookLoad(driver);
+                  onClose();
+                }}
+                className="px-6 cursor-pointer py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Book a Load
+              </button>
+            )}
           </div>
         </div>
       </div>

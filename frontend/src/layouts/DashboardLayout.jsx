@@ -3,7 +3,11 @@ import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "../contexts/ToastContext.jsx";
 
 export default function DashboardLayout() {
-  const [user, setUser] = useState(null);
+  // Initialize user from localStorage to prevent flash of all tabs
+  const [user, setUser] = useState(() => {
+    const savedProfile = localStorage.getItem("profile");
+    return savedProfile ? JSON.parse(savedProfile) : null;
+  });
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -31,6 +35,47 @@ export default function DashboardLayout() {
     }
     fetchProfile();
   }, []);
+
+  // Check permissions and redirect if user doesn't have access to current route
+  useEffect(() => {
+    if (!user) return; // Wait for user to load
+
+    const permissionMap = {
+      "/dashboard/payments": "payment",
+      "/dashboard/staff": "staff",
+      "/dashboard/files": "files",
+      "/dashboard/dialer": "dialer",
+      "/dashboard/leads": "dialer",
+      "/dashboard/drivers": "driver",
+      "/dashboard/loads": "driver",
+    };
+
+    const currentPath = location.pathname;
+    const requiredPermission = permissionMap[currentPath];
+
+    // If this route requires a permission
+    if (requiredPermission) {
+      // Admin/tenant has full access
+      if (user.role !== 'staff') return;
+
+      // Check if staff has the required permission
+      const hasPermission = (user.permissions || []).includes(requiredPermission);
+
+      if (!hasPermission) {
+        // Redirect to first available page
+        const availableRoutes = Object.keys(permissionMap).filter(path => {
+          const perm = permissionMap[path];
+          return (user.permissions || []).includes(perm);
+        });
+
+        if (availableRoutes.length > 0) {
+          navigate(availableRoutes[0], { replace: true });
+        } else {
+          navigate("/dashboard/profile", { replace: true });
+        }
+      }
+    }
+  }, [user, location.pathname, navigate]);
 
   useEffect(() => {
     const closeOnOutsideClick = (e) => {
@@ -130,6 +175,25 @@ export default function DashboardLayout() {
       ),
     },
     {
+      path: "/dashboard/leads",
+      label: "Leads",
+      icon: (
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+          />
+        </svg>
+      ),
+    },
+    {
       path: "/dashboard/drivers",
       label: "Drivers",
       icon: (
@@ -149,8 +213,8 @@ export default function DashboardLayout() {
       ),
     },
     {
-      path: "/dashboard/loader-carrier",
-      label: "Loader/Carrier",
+      path: "/dashboard/loads",
+      label: "Loads",
       icon: (
         <svg
           className="w-5 h-5"
@@ -177,8 +241,9 @@ export default function DashboardLayout() {
       "/dashboard/staff": "staff",
       "/dashboard/files": "files",
       "/dashboard/dialer": "dialer",
+      "/dashboard/leads": "dialer",
       "/dashboard/drivers": "driver",
-      "/dashboard/loader-carrier": "driver",
+      "/dashboard/loads": "driver",
     };
     const perm = map[path];
     return !perm || (user.permissions || []).includes(perm);
@@ -200,10 +265,9 @@ export default function DashboardLayout() {
           fixed lg:static inset-y-0 left-0 z-50
           bg-gray-800 border-r border-gray-700 shadow-lg lg:shadow-sm
           transition-all duration-300 ease-in-out
-          ${
-            mobileMenuOpen
-              ? "translate-x-0"
-              : "-translate-x-full lg:translate-x-0"
+          ${mobileMenuOpen
+            ? "translate-x-0"
+            : "-translate-x-full lg:translate-x-0"
           }
           ${sidebarCollapsed ? "w-16" : "w-64"}
           flex flex-col
@@ -277,20 +341,18 @@ export default function DashboardLayout() {
 
         {/* Navigation */}
         <nav className="flex-1 pt-4 pb-4 px-1 space-y-1">
-          {navigationItems.filter((i)=>permissionForPath(i.path)).map((item) => (
+          {navigationItems.filter((i) => permissionForPath(i.path)).map((item) => (
             <Link
               key={item.path}
               to={item.path}
               onClick={() => setMobileMenuOpen(false)}
               className={`
-                group flex items-center ${
-                  sidebarCollapsed ? "justify-center px-1" : "px-3"
+                group flex items-center ${sidebarCollapsed ? "justify-center px-1" : "px-3"
                 } py-3 rounded-xl text-sm font-medium
                 transition-all duration-200 relative overflow-hidden
-                ${
-                  isActive(item.path)
-                    ? "bg-gradient-to-r from-blue-900/30 to-blue-800/30 text-blue-300 shadow-sm border border-blue-700"
-                    : "text-gray-300 hover:bg-gray-700 hover:text-white hover:shadow-sm"
+                ${isActive(item.path)
+                  ? "bg-gradient-to-r from-blue-900/30 to-blue-800/30 text-blue-300 shadow-sm border border-blue-700"
+                  : "text-gray-300 hover:bg-gray-700 hover:text-white hover:shadow-sm"
                 }
               `}
             >
@@ -303,11 +365,10 @@ export default function DashboardLayout() {
               <div
                 className={`
                 flex items-center justify-center w-8 h-8 rounded-lg transition-colors
-                ${
-                  isActive(item.path)
+                ${isActive(item.path)
                     ? "bg-blue-800/50 text-blue-300"
                     : "bg-gray-700 text-gray-400 group-hover:bg-gray-600 group-hover:text-gray-200"
-                }
+                  }
               `}
               >
                 {item.icon}
@@ -328,55 +389,54 @@ export default function DashboardLayout() {
           ))}
 
           {/* Scraper Button */}
-          {(!user || user.role !== 'staff' || (user.permissions||[]).includes('scraper')) && (
-          <button
-            onClick={async () => {
-              try {
-                const res = await fetch(`${SERVER_URL}/run-scrapper`, {
-                  method: "POST",
-                  headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`,
-                  },
-                });
-                const data = await res.json();
-                if (res.ok) {
-                  success(data.message || "Scraper started successfully!");
-                } else {
-                  error(data.error || data.message || "Failed to start scraper");
+          {/* {(!user || user.role !== 'staff' || (user.permissions || []).includes('scraper')) && (
+            <button
+              onClick={async () => {
+                try {
+                  const res = await fetch(`${SERVER_URL}/run-scrapper`, {
+                    method: "POST",
+                    headers: {
+                      Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                  });
+                  const data = await res.json();
+                  if (res.ok) {
+                    success(data.message || "Scraper started successfully!");
+                  } else {
+                    error(data.error || data.message || "Failed to start scraper");
+                  }
+                } catch (err) {
+                  error(err);
                 }
-              } catch (err) {
-                error(err);
-              }
-            }}
-            className={`group flex items-center w-full ${
-              sidebarCollapsed ? "justify-center px-1" : "px-3"
-            } py-3 rounded-xl text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white hover:shadow-sm transition-all duration-200`}
-          >
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-700 text-gray-400 group-hover:bg-gray-600 group-hover:text-gray-200 transition-colors">
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
-              </svg>
-            </div>
-            {!sidebarCollapsed && (
-              <span className="ml-3 font-medium">Run Scraper</span>
-            )}
-            {sidebarCollapsed && (
-              <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                Run Scraper
+              }}
+              className={`group flex items-center w-full ${sidebarCollapsed ? "justify-center px-1" : "px-3"
+                } py-3 rounded-xl text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white hover:shadow-sm transition-all duration-200`}
+            >
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-700 text-gray-400 group-hover:bg-gray-600 group-hover:text-gray-200 transition-colors">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
               </div>
-            )}
-          </button>
-          )}
+              {!sidebarCollapsed && (
+                <span className="ml-3 font-medium">Run Scraper</span>
+              )}
+              {sidebarCollapsed && (
+                <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                  Run Scraper
+                </div>
+              )}
+            </button>
+          )} */}
         </nav>
 
         {/* User Info */}
@@ -464,9 +524,8 @@ export default function DashboardLayout() {
                     <p className="text-xs text-gray-400">View Profile</p>
                   </div>
                   <svg
-                    className={`w-4 h-4 text-gray-500 transition-transform ${
-                      dropdownOpen ? "rotate-180" : ""
-                    }`}
+                    className={`w-4 h-4 text-gray-500 transition-transform ${dropdownOpen ? "rotate-180" : ""
+                      }`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"

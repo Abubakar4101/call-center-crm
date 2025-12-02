@@ -47,7 +47,7 @@ export const ToastProvider = ({ children }) => {
 
   const error = useCallback(
     (error, options = {}) => {
-      return addToast({ type: "error", message: error.response?.data?.error || error.response?.data?.message || error.message || error.error || 'An error occurred', ...options });
+      return addToast({ type: "error", message: error.response?.data?.error || error.response?.data?.message || error.message || error.error || error || 'An error occurred', ...options });
     },
     [addToast]
   );

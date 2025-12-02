@@ -5,7 +5,7 @@ async function createStaff(tenantId, data, createdBy) {
     if (!data.password) throw new Error('Password is required');
 
     const passwordHash = await bcrypt.hash(data.password, 10);
-    const allowedPermissions = ['payment','staff','files','dialer','scraper'];
+    const allowedPermissions = ['payment', 'staff', 'files', 'dialer', 'driver', 'scraper'];
     const permissions = Array.isArray(data.permissions)
         ? data.permissions.filter(p => allowedPermissions.includes(p))
         : [];
@@ -23,7 +23,7 @@ async function createStaff(tenantId, data, createdBy) {
 
 async function getStaffList(tenantId, filters = {}) {
     const query = { tenant: tenantId };
-    
+
     // Add search functionality
     if (filters.search) {
         query.$or = [
@@ -32,7 +32,7 @@ async function getStaffList(tenantId, filters = {}) {
             { role: { $regex: filters.search, $options: 'i' } }
         ];
     }
-    
+
     // Add call metrics filtering
     if (filters.minCallsMade !== undefined) {
         query.callsMade = { $gte: parseInt(filters.minCallsMade) };
@@ -46,7 +46,7 @@ async function getStaffList(tenantId, filters = {}) {
     if (filters.maxCallsReceived !== undefined) {
         query.callsReceived = { ...query.callsReceived, $lte: parseInt(filters.maxCallsReceived) };
     }
-    
+
     // Add date filtering for calls
     if (filters.callDateFrom || filters.callDateTo) {
         const dateQuery = {};
@@ -58,7 +58,7 @@ async function getStaffList(tenantId, filters = {}) {
         }
         query.createdAt = dateQuery;
     }
-    
+
     return Staff.find(query).sort({ createdAt: -1 });
 }
 
@@ -69,7 +69,7 @@ async function updateStaff(tenantId, staffId, data) {
         delete update.password;
     }
     if (Array.isArray(data.permissions)) {
-        const allowed = ['payment','staff','files','dialer','scraper'];
+        const allowed = ['payment', 'staff', 'files', 'dialer', 'driver', 'scraper'];
         update.permissions = data.permissions.filter(p => allowed.includes(p));
     }
     return Staff.findOneAndUpdate({ _id: staffId, tenant: tenantId }, update, { new: true });

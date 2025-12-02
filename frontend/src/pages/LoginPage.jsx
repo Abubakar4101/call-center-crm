@@ -36,7 +36,7 @@ export default function LoginPage() {
       navigate(navigateTo(data));
     } catch (err) {
       console.error(err);
-      setError(err || "Server error, please try again.");
+      setError(err.response?.data?.message || err.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
