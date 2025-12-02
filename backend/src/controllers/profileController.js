@@ -23,6 +23,7 @@ exports.getProfile = async (req, res) => {
         const user = await User.findById(req.user.userId).select('-passwordHash');
         if (!user) return res.status(404).json({ error: 'User not found' });
         // Tenant/admin has all permissions on frontend
+        
         return res.json({
             _id: user._id,
             name: user.name,
