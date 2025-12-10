@@ -11,7 +11,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
 
   const navigateTo = (data) => {
-    if(data.account.role === 'admin') return "/dashboard/payments";
+    if (data.account.role === 'admin') return "/dashboard/payments";
     else {
       console.log(data.account.permissions);
       return `/dashboard/${data.account.permissions[0] == 'payment' ? 'payments' : data.account.permissions[0]}`;
@@ -62,7 +62,7 @@ export default function LoginPage() {
               />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-100">SkyInfinit</h1>
+          <h1 className="text-2xl font-bold text-gray-100">Swift Trucx</h1>
           <p className="text-gray-400 mt-1">Business Management System</p>
         </div>
 
@@ -222,7 +222,7 @@ export default function LoginPage() {
         {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-sm text-gray-400">
-            © 2024 SkyInfinit. All rights reserved.
+            © 2024 Swift Trucx. All rights reserved.
           </p>
         </div>
       </div>

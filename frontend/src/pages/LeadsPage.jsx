@@ -6,7 +6,7 @@ export default function LeadsPage() {
     const { success, error } = useToast();
     const [leads, setLeads] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState('all'); // all, scheduled, completed, cancelled
+    const [filter, setFilter] = useState('all'); // all, scheduled, interested, completed, cancelled
 
     useEffect(() => {
         fetchLeads();
@@ -68,6 +68,8 @@ export default function LeadsPage() {
         switch (status) {
             case 'scheduled':
                 return 'bg-blue-100 text-blue-800';
+            case 'interested':
+                return 'bg-yellow-100 text-yellow-800';
             case 'completed':
                 return 'bg-green-100 text-green-800';
             case 'cancelled':
@@ -96,8 +98,8 @@ export default function LeadsPage() {
                         <button
                             onClick={() => setFilter('all')}
                             className={`px-4 py-2 rounded-lg font-medium transition-colors ${filter === 'all'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                                 }`}
                         >
                             All
@@ -105,17 +107,26 @@ export default function LeadsPage() {
                         <button
                             onClick={() => setFilter('scheduled')}
                             className={`px-4 py-2 rounded-lg font-medium transition-colors ${filter === 'scheduled'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                                 }`}
                         >
                             Scheduled
                         </button>
                         <button
+                            onClick={() => setFilter('interested')}
+                            className={`px-4 py-2 rounded-lg font-medium transition-colors ${filter === 'interested'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                }`}
+                        >
+                            Interested
+                        </button>
+                        <button
                             onClick={() => setFilter('completed')}
                             className={`px-4 py-2 rounded-lg font-medium transition-colors ${filter === 'completed'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                                 }`}
                         >
                             Completed
@@ -123,8 +134,8 @@ export default function LeadsPage() {
                         <button
                             onClick={() => setFilter('cancelled')}
                             className={`px-4 py-2 rounded-lg font-medium transition-colors ${filter === 'cancelled'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                                 }`}
                         >
                             Cancelled
@@ -303,6 +314,22 @@ export default function LeadsPage() {
                                         {/* Actions */}
                                         <div className="flex flex-col space-y-2 ml-4">
                                             {lead.status === 'scheduled' && (
+                                                <>
+                                                    <button
+                                                        onClick={() => handleStatusUpdate(lead._id, 'interested')}
+                                                        className="btn btn-warning bg-yellow-600 text-xs px-3 py-1"
+                                                    >
+                                                        Interested
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleStatusUpdate(lead._id, 'cancelled')}
+                                                        className="btn btn-error text-xs px-3 py-1"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </>
+                                            )}
+                                            {lead.status === 'interested' && (
                                                 <>
                                                     <button
                                                         onClick={() => handleStatusUpdate(lead._id, 'completed')}

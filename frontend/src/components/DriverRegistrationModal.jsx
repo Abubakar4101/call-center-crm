@@ -365,13 +365,13 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
           {/* Progress Bar */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-400">Step {currentStep} of 5</span>
-              <span className="text-sm text-gray-400">{Math.round((currentStep / 5) * 100)}%</span>
+              <span className="text-sm text-gray-400">Step {currentStep} of {driverToEdit ? 7 : 6}</span>
+              <span className="text-sm text-gray-400">{Math.round((currentStep / (driverToEdit ? 7 : 6)) * 100)}%</span>
             </div>
             <div className="w-full bg-gray-700 rounded-full h-2">
               <div
                 className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${(currentStep / 7) * 100}%` }}
+                style={{ width: `${(currentStep / (driverToEdit ? 7 : 6)) * 100}%` }}
               ></div>
             </div>
           </div>
@@ -549,11 +549,11 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
                       required
                     >
                       <option value="Dry Van">Dry Van</option>
-                      <option value="Refrigerated">Refrigerated</option>
+                      <option value="Reefer">Reefer</option>
                       <option value="Flatbed">Flatbed</option>
-                      <option value="Tanker">Tanker</option>
-                      <option value="Container">Container</option>
-                      <option value="Car Carrier">Car Carrier</option>
+                      <option value="Box Truck">Box Truck</option>
+                      <option value="Step Deck">Step Deck</option>
+                      <option value="Sprinter Van">Sprinter Van</option>
                       <option value="Other">Other</option>
                     </select>
                   </div>
@@ -747,7 +747,7 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Load Type Preferences</label>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {['Dry Van', 'Refrigerated', 'Flatbed', 'Tanker', 'Hazmat', 'Auto Transport', 'Heavy Haul', 'Intermodal'].map(loadType => (
+                    {['Lift Gate', 'Pallet Jack', 'Air Ride'].map(loadType => (
                       <label key={loadType} className="flex items-center space-x-2">
                         <input
                           type="checkbox"

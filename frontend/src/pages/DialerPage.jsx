@@ -520,10 +520,10 @@ export default function DialerPage() {
                       </div>
                       <div className="flex-1">
                         <h4 className="text-lg font-semibold text-gray-100">
-                          {current.name || current.Name || "— (No name)"}
+                          {current.owner_name || current.name || "— (No name)"}
                         </h4>
                         <p className="text-blue-400 font-medium">
-                          {current.phone || current.Phone || current.mobile || current.Mobile || "— (No phone)"}
+                          {current.company_name || current.phone || current.mobile || "— (No phone)"}
                         </p>
                         <p className="text-sm text-gray-400 mt-1">
                           Contact {index + 1} of {contacts.length}
@@ -535,7 +535,9 @@ export default function DialerPage() {
                     <div className="space-y-3">
                       {contactHeaders.length > 0 ? (
                         contactHeaders.map((header) => {
+                          console.log(header);
                           const value = current[header];
+                          console.log(value);
                           // Skip if value is empty or if it's the id field
                           if (header === 'id' || (value === null || value === undefined || value === '')) {
                             return null;

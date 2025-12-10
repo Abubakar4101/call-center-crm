@@ -115,7 +115,7 @@ class LeadController {
             const tenantId = req.user.tenant;
 
             // Validate status
-            const validStatuses = ['scheduled', 'completed', 'cancelled'];
+            const validStatuses = ['scheduled', 'interested', 'completed', 'cancelled'];
             if (!validStatuses.includes(status)) {
                 return res.status(400).json({
                     error: `Invalid status. Must be one of: ${validStatuses.join(', ')}`

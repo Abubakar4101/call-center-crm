@@ -88,6 +88,24 @@ class ApiService {
     return this.handleResponse(response);
   }
 
+  async updateStaffAgenda(id, agendaData) {
+    const response = await fetch(`${this.baseURL}/staff/${id}/agenda`, {
+      method: "PATCH",
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(agendaData),
+    });
+    return this.handleResponse(response);
+  }
+
+  async getStaffPerformance(params = {}) {
+    const queryString = new URLSearchParams(params).toString();
+    const response = await fetch(`${this.baseURL}/staff/performance${queryString ? `?${queryString}` : ''}`, {
+      method: "GET",
+      headers: this.getAuthHeaders(),
+    });
+    return this.handleResponse(response);
+  }
+
   // Payment APIs
   async getPayments(params = {}) {
     const queryString = new URLSearchParams(params).toString();
@@ -111,6 +129,14 @@ class ApiService {
       method: "POST",
       headers: this.getAuthHeaders(),
       body: JSON.stringify(paymentData),
+    });
+    return this.handleResponse(response);
+  }
+
+  async deletePayment(id) {
+    const response = await fetch(`${this.baseURL}/payments/${id}`, {
+      method: "DELETE",
+      headers: this.getAuthHeaders(),
     });
     return this.handleResponse(response);
   }

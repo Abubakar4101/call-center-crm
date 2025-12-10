@@ -11,6 +11,15 @@ const staffSchema = new mongoose.Schema({
     profilePicture: { type: String, default: null },
     callsMade: { type: Number, default: 0 },
     callsReceived: { type: Number, default: 0 },
+    leadsCreated: { type: Number, default: 0 },
+    dailyAgenda: {
+        callsGoal: { type: Number, default: 0 },
+        leadsGoal: { type: Number, default: 0 }
+    },
+    monthlyAgenda: {
+        callsGoal: { type: Number, default: 0 },
+        leadsGoal: { type: Number, default: 0 }
+    },
     active: { type: Boolean, default: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     permissions: {
@@ -20,7 +29,7 @@ const staffSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // helper to hash password before save
-staffSchema.pre('save', async function(next) {
+staffSchema.pre('save', async function (next) {
     if (this.isModified('passwordHash')) return next();
     this.passwordHash = await bcrypt.hash(this.passwordHash, 10);
     next();

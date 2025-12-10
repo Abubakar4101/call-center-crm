@@ -51,7 +51,7 @@ export default function RegisterPage() {
               />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-100">SkyInfinit</h1>
+          <h1 className="text-2xl font-bold text-gray-100">Swift Trucx</h1>
           <p className="text-gray-400 mt-1">Business Management System</p>
         </div>
 
@@ -230,7 +230,7 @@ export default function RegisterPage() {
         {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-sm text-gray-400">
-            © 2024 SkyInfinit. All rights reserved.
+            © 2024 Swift Trucx. All rights reserved.
           </p>
         </div>
       </div>

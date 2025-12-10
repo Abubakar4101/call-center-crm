@@ -9,7 +9,7 @@ const LeadSchema = new mongoose.Schema({
     // Meeting details
     meetingDate: { type: Date, required: true },
 
-    // User who scheduled the meeting
+    // User who scheduled the meeting (can be staff member)
     scheduledBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     scheduledByName: { type: String, required: true },
     scheduledByEmail: { type: String, required: true },
@@ -17,7 +17,7 @@ const LeadSchema = new mongoose.Schema({
     // Status tracking
     status: {
         type: String,
-        enum: ['scheduled', 'completed', 'cancelled'],
+        enum: ['scheduled', 'interested', 'completed', 'cancelled'],
         default: 'scheduled'
     },
 

@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from "react";
 import apiService from "../services/api";
 import { useToast } from "../contexts/ToastContext.jsx";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function StaffPage() {
   const { success, error, warning } = useToast();
   const [staff, setStaff] = useState([]);
+  const [performance, setPerformance] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showAgendaModal, setShowAgendaModal] = useState(false);
+  const [selectedStaff, setSelectedStaff] = useState(null);
   const [editStaff, setEditStaff] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -16,14 +20,18 @@ export default function StaffPage() {
     password: "",
     permissions: [],
   });
+  const [agendaData, setAgendaData] = useState({
+    dailyAgenda: { callsGoal: 0, leadsGoal: 0 },
+    monthlyAgenda: { callsGoal: 0, leadsGoal: 0 }
+  });
 
   // Filter states
   const [filters, setFilters] = useState({
     search: "",
     minCallsMade: "",
     maxCallsMade: "",
-    minCallsReceived: "",
-    maxCallsReceived: "",
+    minLeads: "",
+    maxLeads: "",
     callDateFrom: "",
     callDateTo: "",
   });
@@ -34,6 +42,10 @@ export default function StaffPage() {
       setLoading(true);
       const staffData = await apiService.getStaff(filterParams);
       setStaff(staffData);
+
+      // Fetch performance data with same filters
+      const performanceData = await apiService.getStaffPerformance(filterParams);
+      setPerformance(performanceData);
     } catch (err) {
       console.error("Failed to fetch staff:", err);
       error("Failed to fetch staff data");
@@ -79,8 +91,8 @@ export default function StaffPage() {
       search: "",
       minCallsMade: "",
       maxCallsMade: "",
-      minCallsReceived: "",
-      maxCallsReceived: "",
+      minLeads: "",
+      maxLeads: "",
       callDateFrom: "",
       callDateTo: "",
     });
@@ -91,16 +103,13 @@ export default function StaffPage() {
     e.preventDefault();
     try {
       if (editStaff) {
-        // Update existing staff
         await apiService.updateStaff(editStaff._id, formData);
         success("Staff updated successfully!");
       } else {
-        // Add new staff
         await apiService.createStaff(formData);
         success("Staff created successfully!");
       }
 
-      // Refresh the staff list
       await fetchStaff();
       setShowForm(false);
       setEditStaff(null);
@@ -117,12 +126,54 @@ export default function StaffPage() {
     try {
       await apiService.deleteStaff(id);
       success("Staff deleted successfully");
-      // Refresh the staff list
       await fetchStaff();
     } catch (err) {
       console.error("Failed to delete staff:", err);
       error("Failed to delete staff: " + err.message);
     }
+  };
+
+  const handleAgendaSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await apiService.updateStaffAgenda(selectedStaff._id, agendaData);
+      success("Agenda updated successfully!");
+      setShowAgendaModal(false);
+      await fetchStaff();
+    } catch (err) {
+      console.error("Failed to update agenda:", err);
+      error("Failed to update agenda: " + err.message);
+    }
+  };
+
+  const openAgendaModal = (staffMember) => {
+    setSelectedStaff(staffMember);
+    setAgendaData({
+      dailyAgenda: staffMember.dailyAgenda || { callsGoal: 0, leadsGoal: 0 },
+      monthlyAgenda: staffMember.monthlyAgenda || { callsGoal: 0, leadsGoal: 0 }
+    });
+    setShowAgendaModal(true);
+  };
+
+  const getProgressColor = (percentage) => {
+    if (percentage >= 80) return 'bg-green-500';
+    if (percentage >= 50) return 'bg-yellow-500';
+    return 'bg-red-400';
+  };
+
+  const calculateProgress = (actual, goal) => {
+    if (!goal || goal === 0) return 0;
+    return Math.min((actual / goal) * 100, 100);
+  };
+
+  // Get performance data for a staff member
+  const getStaffPerformance = (staffId) => {
+    return performance.find(p => p._id === staffId) || {
+      callsMade: 0,
+      leadsCreated: 0,
+      dailyAgenda: { callsGoal: 0, leadsGoal: 0 },
+      monthlyAgenda: { callsGoal: 0, leadsGoal: 0 }
+    };
   };
 
   return (
@@ -193,7 +244,6 @@ export default function StaffPage() {
       {/* Search and Filters */}
       {showFilters && (
         <div className="card">
-
           <div className="card-body">
             <h4 className="text-sm font-medium text-gray-300 pb-4">Advanced Filters</h4>
 
@@ -227,7 +277,6 @@ export default function StaffPage() {
             </div>
 
             {/* Advanced Filters */}
-
             <div className="border-t border-gray-700 pt-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* Call Metrics */}
@@ -256,11 +305,11 @@ export default function StaffPage() {
                   />
                 </div>
                 <div>
-                  <label className="form-label text-xs">Min Calls Received</label>
+                  <label className="form-label text-xs">Min Leads</label>
                   <input
                     type="number"
-                    name="minCallsReceived"
-                    value={filters.minCallsReceived}
+                    name="minLeads"
+                    value={filters.minLeads}
                     onChange={handleFilterChange}
                     className="form-input"
                     placeholder="0"
@@ -268,11 +317,11 @@ export default function StaffPage() {
                   />
                 </div>
                 <div>
-                  <label className="form-label text-xs">Max Calls Received</label>
+                  <label className="form-label text-xs">Max Leads</label>
                   <input
                     type="number"
-                    name="maxCallsReceived"
-                    value={filters.maxCallsReceived}
+                    name="maxLeads"
+                    value={filters.maxLeads}
                     onChange={handleFilterChange}
                     className="form-input"
                     placeholder="100"
@@ -316,13 +365,67 @@ export default function StaffPage() {
               >
                 Apply
               </button>
-
             </div>
           </div>
         </div>
       )}
 
-      {/* Staff List */}
+      {/* Performance Graph */}
+      {performance.length > 0 && (
+        <div className="card">
+          <div className="card-header">
+            <h3 className="text-lg font-semibold text-gray-100">Team Performance</h3>
+            <p className="text-sm text-gray-400 mt-1">
+              Calls made and leads created by team members
+            </p>
+          </div>
+          <div className="card-body">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                data={performance}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis
+                  dataKey="name"
+                  stroke="#9CA3AF"
+                  tick={{ fill: '#9CA3AF' }}
+                />
+                <YAxis
+                  stroke="#9CA3AF"
+                  tick={{ fill: '#9CA3AF' }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1F2937',
+                    border: '1px solid #374151',
+                    borderRadius: '0.5rem',
+                    color: '#F3F4F6'
+                  }}
+                  labelStyle={{ color: '#F3F4F6' }}
+                />
+                <Legend
+                  wrapperStyle={{ color: '#9CA3AF' }}
+                />
+                <Bar
+                  dataKey="callsMade"
+                  fill="#10B981"
+                  name="Calls Made"
+                  radius={[8, 8, 0, 0]}
+                />
+                <Bar
+                  dataKey="leadsCreated"
+                  fill="#3B82F6"
+                  name="Leads Created"
+                  radius={[8, 8, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Staff Cards */}
       <div className="card">
         <div className="card-header">
           <h3 className="text-lg font-semibold text-gray-100">Team Members</h3>
@@ -330,7 +433,7 @@ export default function StaffPage() {
             All staff members in your organization
           </p>
         </div>
-        <div className="card-body p-0">
+        <div className="card-body">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="flex items-center space-x-2">
@@ -380,64 +483,26 @@ export default function StaffPage() {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="table w-full whitespace-nowrap min-w-[900px]">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th className="hidden sm:table-cell">Email</th>
-                    <th>Role</th>
-                    <th className="hidden md:table-cell">Phone</th>
-                    <th className="hidden lg:table-cell">Calls Made</th>
-                    <th className="hidden lg:table-cell">Calls Received</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {staff.map((s) => (
-                    <tr key={s._id}>
-                      <td>
-                        <div className="flex items-center">
-                          <div className="w-6 h-6 lg:w-8 lg:h-8 bg-blue-100 rounded-full flex items-center justify-center mr-2 lg:mr-3">
-                            <svg
-                              className="w-3 h-3 lg:w-4 lg:h-4 text-blue-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                              />
-                            </svg>
-                          </div>
-                          <div>
-                            <span className="font-medium text-sm lg:text-base">
-                              {s.name}
-                            </span>
-                            <p className="text-xs text-gray-500 sm:hidden">
-                              {s.email}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="hidden sm:table-cell text-sm">
-                        {s.email}
-                      </td>
-                      <td>
-                        <span className="badge badge-gray text-xs">
-                          {s.role}
-                        </span>
-                      </td>
-                      <td className="hidden md:table-cell text-sm text-gray-600">
-                        {s.phone || "N/A"}
-                      </td>
-                      <td className="hidden lg:table-cell text-sm text-gray-600">
-                        <div className="flex items-center">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {staff.map((s) => {
+                const perf = getStaffPerformance(s._id);
+                const dailyCallsProgress = calculateProgress(perf.callsMade, perf.dailyAgenda.callsGoal);
+                const dailyLeadsProgress = calculateProgress(perf.leadsCreated, perf.dailyAgenda.leadsGoal);
+                const monthlyCallsProgress = calculateProgress(perf.callsMade, perf.monthlyAgenda.callsGoal);
+                const monthlyLeadsProgress = calculateProgress(perf.leadsCreated, perf.monthlyAgenda.leadsGoal);
+
+                return (
+                  <div
+                    key={s._id}
+                    className="bg-gray-700 h-[435px] relative border border-gray-600 rounded-lg overflow-hidden hover:border-gray-500 transition-all cursor-pointer"
+                    onClick={() => openAgendaModal(s)}
+                  >
+                    {/* Card Header */}
+                    <div className="p-4 bg-gray-750">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                           <svg
-                            className="w-4 h-4 text-green-500 mr-1"
+                            className="w-6 h-6 text-blue-600"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -446,97 +511,281 @@ export default function StaffPage() {
                               strokeLinecap="round"
                               strokeLinejoin="round"
                               strokeWidth={2}
-                              d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                             />
                           </svg>
-                          <span className="font-medium text-green-400">
-                            {s.callsMade || 0}
-                          </span>
                         </div>
-                      </td>
-                      <td className="hidden lg:table-cell text-sm text-gray-600">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-gray-100 truncate">{s.name}</h4>
+                          <p className="text-xs text-gray-400 truncate">{s.email}</p>
+                        </div>
+                        <span className="badge badge-gray text-xs">{s.role}</span>
+                      </div>
+                    </div>
+
+                    {/* Card Body */}
+                    <div className="p-4 space-y-3">
+                      {/* Phone */}
+                      {s.phone && (
+                        <div className="flex items-center text-sm text-gray-300">
+                          <svg className="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                          </svg>
+                          {s.phone}
+                        </div>
+                      )}
+
+                      {/* Stats */}
+                      <div className="grid grid-cols-2 gap-2 text-xs">
                         <div className="flex items-center">
-                          <svg
-                            className="w-4 h-4 text-blue-500 mr-1"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                            />
+                          <svg className="w-4 h-4 text-green-400 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                           </svg>
-                          <span className="font-medium text-blue-400">
-                            {s.callsReceived || 0}
-                          </span>
+                          <span className="text-gray-300">{perf.callsMade} calls</span>
                         </div>
-                      </td>
-                      <td>
-                        <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
-                          <button
-                            onClick={() => {
-                              setEditStaff(s);
-                              setFormData({
-                                name: s.name,
-                                email: s.email,
-                                role: s.role,
-                                phone: s.phone,
-                                password: "",
-                                permissions: Array.isArray(s.permissions) ? s.permissions : [],
-                              });
-                              setShowForm(true);
-                            }}
-                            className="btn btn-secondary btn-sm text-xs"
-                          >
-                            <svg
-                              className="w-3 h-3 lg:w-4 lg:h-4 mr-1"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                              />
-                            </svg>
-                            <span className="hidden sm:inline">Edit</span>
-                          </button>
-                          <button
-                            onClick={() => handleDelete(s._id)}
-                            className="btn btn-error btn-sm text-xs"
-                          >
-                            <svg
-                              className="w-3 h-3 lg:w-4 lg:h-4 mr-1"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                            <span className="hidden sm:inline">Delete</span>
-                          </button>
+                        <div className="flex items-center">
+                          <svg className="w-4 h-4 text-blue-400 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          <span className="text-gray-300">{perf.leadsCreated} leads</span>
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+                      {/* Daily Progress */}
+                      {(perf.dailyAgenda.callsGoal > 0 || perf.dailyAgenda.leadsGoal > 0) && (
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium text-gray-400">Daily Progress</p>
+                          {perf.dailyAgenda.callsGoal > 0 && (
+                            <div>
+                              <div className="flex justify-between text-sm text-gray-300 mb-1">
+                                <span>Calls</span>
+                                <span>{perf.callsMade}/{perf.dailyAgenda.callsGoal}</span>
+                              </div>
+                              <div className="h-2 bg-gray-600 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full ${getProgressColor(dailyCallsProgress)} transition-all duration-300`}
+                                  style={{ width: `${dailyCallsProgress}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          )}
+                          {perf.dailyAgenda.leadsGoal > 0 && (
+                            <div>
+                              <div className="flex justify-between text-sm text-gray-300 mb-1">
+                                <span>Leads</span>
+                                <span>{perf.leadsCreated}/{perf.dailyAgenda.leadsGoal}</span>
+                              </div>
+                              <div className="h-2 bg-gray-600 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full ${getProgressColor(dailyLeadsProgress)} transition-all duration-300`}
+                                  style={{ width: `${dailyLeadsProgress}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Monthly Progress */}
+                      {(perf.monthlyAgenda.callsGoal > 0 || perf.monthlyAgenda.leadsGoal > 0) && (
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium text-gray-400">Monthly Progress</p>
+                          {perf.monthlyAgenda.callsGoal > 0 && (
+                            <div>
+                              <div className="flex justify-between text-sm text-gray-300 mb-1">
+                                <span>Calls</span>
+                                <span>{perf.callsMade}/{perf.monthlyAgenda.callsGoal}</span>
+                              </div>
+                              <div className="h-2 bg-gray-600 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full ${getProgressColor(monthlyCallsProgress)} transition-all duration-300`}
+                                  style={{ width: `${monthlyCallsProgress}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          )}
+                          {perf.monthlyAgenda.leadsGoal > 0 && (
+                            <div>
+                              <div className="flex justify-between text-sm text-gray-300 mb-1">
+                                <span>Leads</span>
+                                <span>{perf.leadsCreated}/{perf.monthlyAgenda.leadsGoal}</span>
+                              </div>
+                              <div className="h-2 bg-gray-600 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full ${getProgressColor(monthlyLeadsProgress)} transition-all duration-300`}
+                                  style={{ width: `${monthlyLeadsProgress}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Card Footer */}
+                    <div className="p-3 bg-gray-750 border-t border-gray-600 flex gap-2 absolute bottom-0 w-full">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditStaff(s);
+                          setFormData({
+                            name: s.name,
+                            email: s.email,
+                            role: s.role,
+                            phone: s.phone,
+                            password: "",
+                            permissions: Array.isArray(s.permissions) ? s.permissions : [],
+                          });
+                          setShowForm(true);
+                        }}
+                        className="btn btn-secondary btn-sm flex-1 text-xs"
+                      >
+                        <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Edit
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(s._id);
+                        }}
+                        className="btn btn-error btn-sm flex-1 text-xs"
+                      >
+                        <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
       </div>
 
-      {/* Modal Form */}
+      {/* Agenda Modal */}
+      {showAgendaModal && selectedStaff && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full border border-gray-700">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-700">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-100">
+                  Set Agenda for {selectedStaff.name}
+                </h3>
+                <p className="text-sm text-gray-400 mt-1">
+                  Define daily and monthly goals
+                </p>
+              </div>
+              <button
+                onClick={() => setShowAgendaModal(false)}
+                className="text-gray-400 hover:text-gray-200 hover:bg-gray-700 transition-all duration-200 p-2 rounded-lg"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleAgendaSubmit} className="p-6 space-y-6">
+              {/* Daily Agenda */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-200 mb-3">Daily Goals</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label text-xs">Calls Goal</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={agendaData.dailyAgenda.callsGoal}
+                      onChange={(e) => setAgendaData(prev => ({
+                        ...prev,
+                        dailyAgenda: { ...prev.dailyAgenda, callsGoal: parseInt(e.target.value) || 0 }
+                      }))}
+                      className="form-input"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label text-xs">Leads Goal</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={agendaData.dailyAgenda.leadsGoal}
+                      onChange={(e) => setAgendaData(prev => ({
+                        ...prev,
+                        dailyAgenda: { ...prev.dailyAgenda, leadsGoal: parseInt(e.target.value) || 0 }
+                      }))}
+                      className="form-input"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Monthly Agenda */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-200 mb-3">Monthly Goals</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label text-xs">Calls Goal</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={agendaData.monthlyAgenda.callsGoal}
+                      onChange={(e) => setAgendaData(prev => ({
+                        ...prev,
+                        monthlyAgenda: { ...prev.monthlyAgenda, callsGoal: parseInt(e.target.value) || 0 }
+                      }))}
+                      className="form-input"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label text-xs">Leads Goal</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={agendaData.monthlyAgenda.leadsGoal}
+                      onChange={(e) => setAgendaData(prev => ({
+                        ...prev,
+                        monthlyAgenda: { ...prev.monthlyAgenda, leadsGoal: parseInt(e.target.value) || 0 }
+                      }))}
+                      className="form-input"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-700">
+                <button
+                  type="button"
+                  onClick={() => setShowAgendaModal(false)}
+                  className="btn btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Save Agenda
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Staff Form Modal (existing) */}
       {showForm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 modal-backdrop">
           <div className="bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col border border-gray-700 modal-content">
@@ -656,7 +905,6 @@ export default function StaffPage() {
                       { key: 'dialer', label: 'Dialer/Lead Module' },
                       { key: 'driver', label: 'Driver Module' },
                       { key: 'load', label: 'Load Module' },
-                      // { key: 'scraper', label: 'Run Scraper Module' },
                     ].map((perm) => (
                       <label key={perm.key} className="inline-flex items-center space-x-2 text-gray-200">
                         <input

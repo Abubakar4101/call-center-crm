@@ -8,7 +8,7 @@ export default function PaymentsPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [totalThisMonth, setTotalThisMonth] = useState(0);
   const [loading, setLoading] = useState(true);
-  const {error, success} = useToast();
+  const { error, success, warning } = useToast();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentFormData, setPaymentFormData] = useState({
     amount: "",
@@ -80,7 +80,7 @@ export default function PaymentsPage() {
       // Set the checkout link from backend response
       setCheckoutLink(response.url);
       success("Checkout link created successfully!");
-      
+
       await fetchData();
       // Don't add temporary payment - wait for webhook to create real payment
       // The payment will appear in the list when the user completes the checkout
@@ -96,6 +96,36 @@ export default function PaymentsPage() {
     setPaymentFormData({ amount: "", title: "", customerEmail: "" });
     setCheckoutLink("");
     setShowPaymentModal(false);
+  };
+
+  const handleDeletePayment = async (paymentId) => {
+    if (!window.confirm("Are you sure you want to delete this payment?")) return;
+
+    try {
+      await apiService.deletePayment(paymentId);
+      success("Payment deleted successfully!");
+      await fetchData();
+    } catch (err) {
+      console.error("Failed to delete payment:", err);
+      error("Failed to delete payment");
+    }
+  };
+
+  const handleCopyLink = async (payment) => {
+    try {
+      // Get the Stripe checkout URL from payment metadata
+      const checkoutUrl = payment.metadata?.checkout_url;
+
+      if (checkoutUrl) {
+        await navigator.clipboard.writeText(checkoutUrl);
+        success("Payment link copied to clipboard!");
+      } else {
+        warning("No payment link available for this payment");
+      }
+    } catch (err) {
+      console.error("Failed to copy link:", err);
+      error("Failed to copy link");
+    }
   };
 
   return (
@@ -260,11 +290,11 @@ export default function PaymentsPage() {
                 <p className="text-2xl font-bold text-gray-100">
                   {payments.length > 0
                     ? Math.round(
-                        (payments.filter((p) => p.status === "succeeded")
-                          .length /
-                          payments.length) *
-                          100
-                      )
+                      (payments.filter((p) => p.status === "succeeded")
+                        .length /
+                        payments.length) *
+                      100
+                    )
                     : 0}
                   %
                 </p>
@@ -346,6 +376,7 @@ export default function PaymentsPage() {
                     <th className="hidden md:table-cell">Currency</th>
                     <th>Status</th>
                     <th className="hidden lg:table-cell">Date</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -395,6 +426,50 @@ export default function PaymentsPage() {
                       </td>
                       <td className="hidden lg:table-cell text-xs lg:text-sm text-gray-600">
                         {new Date(p.createdAt).toLocaleDateString()}
+                      </td>
+                      <td>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => handleCopyLink(p)}
+                            className="btn btn-secondary btn-sm text-xs"
+                            title="Copy Stripe payment link"
+                          >
+                            <svg
+                              className="w-3 h-3 lg:w-4 lg:h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                              />
+                            </svg>
+                            <span className="hidden sm:inline ml-1">Copy</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeletePayment(p._id)}
+                            className="btn btn-error btn-sm text-xs"
+                            title="Delete payment"
+                          >
+                            <svg
+                              className="w-3 h-3 lg:w-4 lg:h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                            <span className="hidden sm:inline ml-1">Delete</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

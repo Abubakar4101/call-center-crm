@@ -55,5 +55,8 @@ async function getDashboardStats(tenantId) {
     return { totalThisMonth, totalCount };
 }
 
+async function deletePayment(tenantId, paymentId) {
+    return Payment.findOneAndDelete({ _id: paymentId, tenant: tenantId });
+}
 
-module.exports = { getTenantPayments, getDashboardStats };
+module.exports = { getTenantPayments, getDashboardStats, deletePayment };

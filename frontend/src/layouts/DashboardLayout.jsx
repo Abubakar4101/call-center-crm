@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "../contexts/ToastContext.jsx";
+import logo from "../assets/logo.PNG";
 
 export default function DashboardLayout() {
   // Initialize user from localStorage to prevent flash of all tabs
@@ -277,23 +278,15 @@ export default function DashboardLayout() {
         <div className="p-2 lg:p-3 lg:py-[27px] border-b border-gray-700 bg-gradient-to-r from-blue-600 to-blue-700">
           <div className="flex items-center justify-between">
             {!sidebarCollapsed && (
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                  <svg
-                    className="w-5 h-5 text-blue-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 10V3L4 14h7v7l9-11h-7z"
-                    />
-                  </svg>
+              <div className="flex flex-col items-start space-x-3">
+                <div className="w-32 rounded-lg flex items-center justify-center">
+                  <img
+                    src={logo}
+                    alt="Swift Trucx"
+                    className="w-32 object-contain"
+                  />
                 </div>
-                <h3 className="text-xl font-bold text-white">SkyInfinit</h3>
+                <h6 className="text-xs font-bold text-white tracking-[3.5px]">Swift Trucx</h6>
               </div>
             )}
             <div className="flex items-center space-x-2">

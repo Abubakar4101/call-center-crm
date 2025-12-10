@@ -33,7 +33,10 @@ async function createCheckoutSession({ tenantId, amount, currency, customer_emai
         currency: currency || 'usd',
         customer_email,
         status: session.payment_status || 'pending',
-        metadata: session.metadata,
+        metadata: {
+            ...session.metadata,
+            checkout_url: session.url  // Store the Stripe checkout URL
+        },
     });
 
     return session;

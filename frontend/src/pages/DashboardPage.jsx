@@ -222,7 +222,7 @@ export default function DashboardPage() {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold mb-2">
-              Welcome to SkyInfinit Dashboard! 🎉
+              Welcome to Swift Trucx Dashboard! 🎉
             </h1>
             <p className="text-blue-100 text-sm lg:text-base">
               Manage your business operations efficiently with our comprehensive
@@ -244,58 +244,57 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         {loading
           ? // Loading skeleton
-            Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="card">
-                <div className="card-body">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="h-4 bg-gray-700 rounded animate-pulse mb-2"></div>
-                      <div className="h-8 bg-gray-700 rounded animate-pulse"></div>
-                    </div>
-                    <div className="p-3 bg-gray-700 rounded-lg animate-pulse">
-                      <div className="w-6 h-6"></div>
-                    </div>
+          Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="card">
+              <div className="card-body">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="h-4 bg-gray-700 rounded animate-pulse mb-2"></div>
+                    <div className="h-8 bg-gray-700 rounded animate-pulse"></div>
                   </div>
-                  <div className="mt-4 flex items-center">
-                    <div className="h-4 bg-gray-700 rounded animate-pulse w-12"></div>
-                    <div className="h-4 bg-gray-700 rounded animate-pulse w-20 ml-2"></div>
+                  <div className="p-3 bg-gray-700 rounded-lg animate-pulse">
+                    <div className="w-6 h-6"></div>
                   </div>
                 </div>
+                <div className="mt-4 flex items-center">
+                  <div className="h-4 bg-gray-700 rounded animate-pulse w-12"></div>
+                  <div className="h-4 bg-gray-700 rounded animate-pulse w-20 ml-2"></div>
+                </div>
               </div>
-            ))
+            </div>
+          ))
           : stats.map((stat, index) => (
-              <div key={index} className="card">
-                <div className="card-body">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-400">
-                        {stat.title}
-                      </p>
-                      <p className="text-2xl font-bold text-gray-100 mt-1">
-                        {stat.value}
-                      </p>
-                    </div>
-                    <div className="p-3 bg-blue-900/30 rounded-lg">
-                      <div className="text-blue-400">{stat.icon}</div>
-                    </div>
+            <div key={index} className="card">
+              <div className="card-body">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-400">
+                      {stat.title}
+                    </p>
+                    <p className="text-2xl font-bold text-gray-100 mt-1">
+                      {stat.value}
+                    </p>
                   </div>
-                  <div className="mt-4 flex items-center">
-                    <span
-                      className={`text-sm font-medium ${
-                        stat.changeType === "positive"
-                          ? "text-green-400"
-                          : "text-red-400"
-                      }`}
-                    >
-                      {stat.change}
-                    </span>
-                    <span className="text-sm text-gray-400 ml-2">
-                      from last month
-                    </span>
+                  <div className="p-3 bg-blue-900/30 rounded-lg">
+                    <div className="text-blue-400">{stat.icon}</div>
                   </div>
                 </div>
+                <div className="mt-4 flex items-center">
+                  <span
+                    className={`text-sm font-medium ${stat.changeType === "positive"
+                        ? "text-green-400"
+                        : "text-red-400"
+                      }`}
+                  >
+                    {stat.change}
+                  </span>
+                  <span className="text-sm text-gray-400 ml-2">
+                    from last month
+                  </span>
+                </div>
               </div>
-            ))}
+            </div>
+          ))}
       </div>
 
       {/* Quick Actions */}

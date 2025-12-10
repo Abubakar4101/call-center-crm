@@ -17,7 +17,7 @@ function getTransporter() {
 async function sendEmail({ to, subject, html }) {
     try {
         const tx = getTransporter();
-        const from = process.env.MAIL_FROM || 'no-reply@skyinfinit.app';
+        const from = process.env.MAIL_FROM || 'no-reply@swift-trucx.app';
         console.log("this the from", from)
         await tx.sendMail({ from, to, subject, html });
         console.log("Mail sending", from, to)

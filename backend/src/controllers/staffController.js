@@ -1,6 +1,6 @@
 const staffService = require('../services/staffService');
 
-exports.addStaff = async(req, res) => {
+exports.addStaff = async (req, res) => {
     try {
         console.log(req.user)
         const staff = await staffService.createStaff(req.user.tenantId, req.body, req.user.userId);
@@ -11,7 +11,7 @@ exports.addStaff = async(req, res) => {
     }
 };
 
-exports.listStaff = async(req, res) => {
+exports.listStaff = async (req, res) => {
     try {
         const staff = await staffService.getStaffList(req.user.tenantId, req.query);
         res.json(staff);
@@ -20,7 +20,7 @@ exports.listStaff = async(req, res) => {
     }
 };
 
-exports.updateStaff = async(req, res) => {
+exports.updateStaff = async (req, res) => {
     try {
         const updated = await staffService.updateStaff(req.user.tenantId, req.params.id, req.body);
         if (!updated) return res.status(404).json({ message: 'Staff not found' });
@@ -30,11 +30,35 @@ exports.updateStaff = async(req, res) => {
     }
 };
 
-exports.deleteStaff = async(req, res) => {
+exports.deleteStaff = async (req, res) => {
     try {
         const deleted = await staffService.deleteStaff(req.user.tenantId, req.params.id);
         if (!deleted) return res.status(404).json({ message: 'Staff not found' });
         res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+exports.updateAgenda = async (req, res) => {
+    try {
+        const { dailyAgenda, monthlyAgenda } = req.body;
+        const updated = await staffService.updateStaffAgenda(
+            req.user.tenantId,
+            req.params.id,
+            { dailyAgenda, monthlyAgenda }
+        );
+        if (!updated) return res.status(404).json({ message: 'Staff not found' });
+        res.json(updated);
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+};
+
+exports.getPerformance = async (req, res) => {
+    try {
+        const performance = await staffService.getStaffPerformance(req.user.tenantId, req.query);
+        res.json(performance);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

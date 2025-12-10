@@ -33,7 +33,7 @@ const driverSchema = new mongoose.Schema({
         truckType: {
             type: String,
             default: 'Dry Van',
-            enum: ['Dry Van', 'Refrigerated', 'Flatbed', 'Tanker', 'Container', 'Car Carrier', 'Other']
+            enum: ['Dry Van', 'Reefer', 'Flatbed', 'Box Truck', 'Step Deck', 'Sprinter Van', 'Other']
         },
         weightCapacity: { type: Number, default: 0 }, // in pounds
         size: {
@@ -72,7 +72,7 @@ const driverSchema = new mongoose.Schema({
         }],
         loadTypePreferences: [{
             type: String,
-            enum: ['Dry Van', 'Refrigerated', 'Flatbed', 'Tanker', 'Hazmat', 'Auto Transport', 'Heavy Haul', 'Intermodal']
+            enum: ['Lift Gate', 'Pallet Jack', 'Air Ride']
         }],
         minimumRatePerMile: { type: Number, default: 0 },
         maxMilesPerWeek: { type: Number, default: 0 },
