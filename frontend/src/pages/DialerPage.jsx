@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import apiService from "../services/api";
 import { useToast } from "../contexts/ToastContext.jsx";
 import FollowUpModal from "../components/FollowUpModal.jsx";
+import { parsePhoneNumber } from "libphonenumber-js";
 
 export default function DialerPage() {
   const { success, error, warning } = useToast();
@@ -61,6 +62,70 @@ export default function DialerPage() {
     }
   }
 
+  // Helper function to find phone number in contact object
+  function findPhoneNumber(contact) {
+    if (!contact) return null;
+
+    // Priority keys to check first
+    const priorityKeys = ['phone', 'mobile', 'number', 'cell', 'tel', 'contact', 'phone_number', 'mobile_number', 'cell_number'];
+
+    // First, check priority keys
+    for (const key of priorityKeys) {
+      const value = contact[key];
+      if (value) {
+        const result = tryParsePhoneNumber(value);
+        if (result) return result;
+      }
+    }
+
+    // If not found in priority keys, scan all other fields
+    for (const [key, value] of Object.entries(contact)) {
+      // Skip already checked keys and non-phone-like keys
+      if (priorityKeys.includes(key.toLowerCase()) || key === 'id' || key === 'name' || key === 'email') {
+        continue;
+      }
+
+      const result = tryParsePhoneNumber(value);
+      if (result) return result;
+    }
+
+    return null;
+  }
+
+  // Helper to parse and validate a phone number value
+  function tryParsePhoneNumber(value) {
+    if (!value) return null;
+
+    const strValue = String(value).trim();
+    if (!strValue) return null;
+
+    try {
+      // Try parsing as international number (with country code)
+      const phoneNumber = parsePhoneNumber(strValue);
+      if (phoneNumber && phoneNumber.isValid()) {
+        // Return E.164 format or national number
+        console.log("I am in package", phoneNumber.number, phoneNumber.nationalNumber)
+        return phoneNumber.number || phoneNumber.nationalNumber;
+      }
+    } catch (e) {
+      // If parsing fails, it might be a local number without country code
+      // Check if it looks like a phone number (has enough digits)
+      const digitsOnly = strValue.replace(/\D+/g, "");
+      console.log("in catch", digitsOnly)
+      // Phone numbers typically have 7-15 digits
+      if (digitsOnly.length >= 7 && digitsOnly.length <= 15) {
+        // Additional check: ensure the original value is mostly digits/phone chars
+        const phoneChars = strValue.replace(/[\d\s\-\(\)\+\.]/g, "");
+        // If less than 20% non-phone characters, accept it
+        if (phoneChars.length < strValue.length * 0.2) {
+          return digitsOnly;
+        }
+      }
+    }
+
+    return null;
+  }
+
   async function loadContacts() {
     if (!selectedFileId) return warning("Select a file first.");
     setLoadingContacts(true);
@@ -114,9 +179,9 @@ export default function DialerPage() {
     setCalling(true);
 
     try {
-      const rawNumber = contact.phone || contact.mobile;
-      if (!rawNumber) throw new Error("No phone number on contact");
-      const digitsOnly = String(rawNumber).replace(/\D+/g, "");
+      const phoneNumber = findPhoneNumber(contact);
+      if (!phoneNumber) throw new Error("No phone number found on contact");
+      const digitsOnly = String(phoneNumber).replace(/\D+/g, "");
       const token = localStorage.getItem("token") || "";
       const url = `https://voice.google.com/u/0/messages#autocall=${digitsOnly}&token=${encodeURIComponent(token)}`;
 
@@ -523,7 +588,7 @@ export default function DialerPage() {
                           {current.owner_name || current.name || "— (No name)"}
                         </h4>
                         <p className="text-blue-400 font-medium">
-                          {current.company_name || current.phone || current.mobile || "— (No phone)"}
+                          {current.company_name || findPhoneNumber(current) || "— (No phone)"}
                         </p>
                         <p className="text-sm text-gray-400 mt-1">
                           Contact {index + 1} of {contacts.length}
@@ -535,9 +600,7 @@ export default function DialerPage() {
                     <div className="space-y-3">
                       {contactHeaders.length > 0 ? (
                         contactHeaders.map((header) => {
-                          console.log(header);
                           const value = current[header];
-                          console.log(value);
                           // Skip if value is empty or if it's the id field
                           if (header === 'id' || (value === null || value === undefined || value === '')) {
                             return null;
@@ -627,7 +690,7 @@ export default function DialerPage() {
                         <div className="flex-1">
                           <h4 className="font-medium text-gray-100">
                             {log.contact?.name ||
-                              log.contact?.phone ||
+                              findPhoneNumber(log.contact) ||
                               "Unknown Contact"}
                           </h4>
                           <p className="text-sm text-gray-400 mt-1">
