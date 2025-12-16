@@ -17,6 +17,40 @@ class DriverService {
             ];
         }
 
+        // Date Filter Logic
+        if (options.dateFilter && options.dateFilter !== 'all_time') {
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+            let startDate;
+            let endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+            switch (options.dateFilter) {
+                case 'current_month':
+                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                    break;
+                case 'last_month':
+                    startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                    endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+                    break;
+                case 'last_3_months':
+                    startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1); // Current month + 2 previous
+                    break;
+                case 'last_6_months':
+                    startDate = new Date(now.getFullYear(), now.getMonth() - 5, 1); // Current month + 5 previous
+                    break;
+                default:
+                    break;
+            }
+
+            if (startDate) {
+                query.registrationDate = {
+                    $gte: startDate,
+                    $lte: endDate
+                };
+            }
+        }
+
         // Custom Status Logic
         if (status === 'Active') {
             query.status = 'Approved';

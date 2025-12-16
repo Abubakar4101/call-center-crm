@@ -58,8 +58,8 @@ const BookLoadModal = ({ isOpen, onClose, driver }) => {
       // Calculate total payment from amount
       const totalPayment = parseFloat(formData.amount) || 0;
       const percentage = parseFloat(formData.percentage) || 0;
-      const shouldSendInvoice = formData.percentage != 0 && 
-                formData.amount != 0
+      const shouldSendInvoice = formData.percentage != 0 &&
+        formData.amount != 0
       // Update driver with loader info and load details
       const updatePayload = {
         loaderInfo: {
@@ -95,10 +95,10 @@ const BookLoadModal = ({ isOpen, onClose, driver }) => {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         success('Load booked successfully!');
-        
+
         // Generate payment link if percentage and amount are provided
         if (percentage > 0 && totalPayment > 0) {
           try {
@@ -114,10 +114,10 @@ const BookLoadModal = ({ isOpen, onClose, driver }) => {
             // });
 
             setCheckoutLink(data.data.loaderInfo.paymentLink || '');
-            if(
-                shouldSendInvoice
-              )
-                setShowCheckoutModal(true);
+            if (
+              shouldSendInvoice
+            )
+              setShowCheckoutModal(true);
           } catch (err) {
             console.error('Payment link creation failed:', err);
             error('Load booked but payment link creation failed');

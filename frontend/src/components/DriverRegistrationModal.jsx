@@ -64,7 +64,8 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
       w9Form: false,
       noa: false,
       cdlCopy: false
-    }
+    },
+    registrationDate: new Date().toISOString().split('T')[0]
   });
 
   const [loading, setLoading] = useState(false);
@@ -133,7 +134,8 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
           w9Form: driverToEdit.complianceDocuments?.w9Form || false,
           noa: driverToEdit.complianceDocuments?.noa || false,
           cdlCopy: driverToEdit.complianceDocuments?.cdlCopy || false
-        }
+        },
+        registrationDate: driverToEdit.registrationDate ? new Date(driverToEdit.registrationDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
       });
     } else if (!driverToEdit && isOpen) {
       // Reset form for new driver
@@ -143,7 +145,8 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
         truckEquipmentInfo: { truckType: 'Dry Van', weightCapacity: '', size: { length: '', width: '', height: '' }, licensePlate: '', licenseState: '', vin: '', year: '', truckNumber: '', model: '' },
         paymentBillingInfo: { dispatchFee: '', paymentTerms: 'Weekly', preferredPaymentMethod: 'Zelle' },
         preferences: { preferredRoutes: [], loadTypePreferences: [], minimumRatePerMile: '', maxMilesPerWeek: '', homeTime: '', specialRequirements: '' },
-        complianceDocuments: { mcAuthority: false, insuranceCertificate: false, w9Form: false, noa: false, cdlCopy: false }
+        complianceDocuments: { mcAuthority: false, insuranceCertificate: false, w9Form: false, noa: false, cdlCopy: false },
+        registrationDate: new Date().toISOString().split('T')[0]
       });
     }
   }, [driverToEdit, isOpen]);
@@ -271,7 +274,8 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
           truckEquipmentInfo: { truckType: 'Dry Van', weightCapacity: '', size: { length: '', width: '', height: '' }, licensePlate: '', licenseState: '', vin: '', year: '', truckNumber: '', model: '' },
           paymentBillingInfo: { dispatchFee: '', paymentTerms: 'Weekly', preferredPaymentMethod: 'Zelle' },
           preferences: { preferredRoutes: [], loadTypePreferences: [], minimumRatePerMile: '', maxMilesPerWeek: '', homeTime: '', specialRequirements: '' },
-          complianceDocuments: { mcAuthority: false, insuranceCertificate: false, w9Form: false, noa: false, cdlCopy: false }
+          complianceDocuments: { mcAuthority: false, insuranceCertificate: false, w9Form: false, noa: false, cdlCopy: false },
+          registrationDate: new Date().toISOString().split('T')[0]
         });
         setCurrentStep(1);
       } else {
@@ -383,6 +387,16 @@ const DriverRegistrationModal = ({ isOpen, onClose, onSuccess, driverToEdit = nu
                 <h3 className="text-lg font-semibold text-white mb-4">1. Carrier Information</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Registration Date</label>
+                    <input
+                      type="date"
+                      value={formData.registrationDate}
+                      onChange={(e) => setFormData({ ...formData, registrationDate: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Company Name</label>
                     <input

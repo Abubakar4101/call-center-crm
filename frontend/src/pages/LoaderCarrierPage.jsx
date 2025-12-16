@@ -419,8 +419,8 @@ const LoaderCarrierPage = () => {
                       <span className="truncate">{driver.loaderInfo?.carrierPacket || 'N/A'}</span>
                     </div>
                     <div className="flex items-center text-sm text-gray-400">
-                      <span className="text-gray-500 mr-2">Date:</span>
-                      <span>{new Date(driver.registrationDate).toLocaleDateString()}</span>
+                      <span className="text-gray-500 mr-2">Book Date:</span>
+                      <span>{window.formatDate(driver.loadDetails?.puDate || driver.registrationDate)}</span>
                     </div>
                   </div>
 

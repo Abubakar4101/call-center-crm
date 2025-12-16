@@ -10,6 +10,7 @@ const DriversPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all_time');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -28,13 +29,14 @@ const DriversPage = () => {
 
   useEffect(() => {
     fetchDrivers();
-  }, [searchTerm, statusFilter]);
+  }, [searchTerm, statusFilter, dateFilter]);
 
   const fetchDrivers = async () => {
     try {
       const params = new URLSearchParams();
       if (searchTerm) params.append('search', searchTerm);
       if (statusFilter && statusFilter !== 'all') params.append('status', statusFilter);
+      if (dateFilter && dateFilter !== 'all_time') params.append('dateFilter', dateFilter);
 
       const url = `${SERVER_URL}/drivers${params.toString() ? `?${params.toString()}` : ''}`;
       const response = await fetch(url, {
@@ -240,6 +242,17 @@ const DriversPage = () => {
           />
         </div>
         <select
+          value={dateFilter}
+          onChange={(e) => setDateFilter(e.target.value)}
+          className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="all_time">All Time</option>
+          <option value="current_month">Current Month</option>
+          <option value="last_month">Last Month</option>
+          <option value="last_3_months">Last 3 Months</option>
+          <option value="last_6_months">Last 6 Months</option>
+        </select>
+        <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -430,7 +443,7 @@ const DriversPage = () => {
               </div>
               <div className="flex items-center text-sm text-gray-400">
                 <span className="text-gray-500 mr-2">Registered:</span>
-                <span>{new Date(driver.registrationDate).toLocaleDateString()}</span>
+                <span>{window.formatDate(driver.registrationDate)}</span>
               </div>
             </div>
 

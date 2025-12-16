@@ -7,14 +7,15 @@ const { generateInvoiceHtml } = require('../services/invoiceService');
 // Get all drivers for a tenant
 const getAllDrivers = async (req, res) => {
     try {
-        const { page = 1, limit = 100, status, search } = req.query;
+        const { page = 1, limit = 100, status, search, dateFilter } = req.query;
         const tenantId = req.user.tenantId;
 
         const drivers = await driverService.getAllDrivers(tenantId, {
             page: parseInt(page),
             limit: parseInt(limit),
             status: status === 'all' ? null : status,
-            search: search || null
+            search: search || null,
+            dateFilter: dateFilter || 'all_time'
         });
 
         res.json({
