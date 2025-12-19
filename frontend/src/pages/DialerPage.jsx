@@ -739,7 +739,7 @@ export default function DialerPage() {
                           )}
                         </div>
                       </div>
-                      <div className="mt-2 text-sm text-gray-700">
+                      <div className="mt-2 text-sm text-gray-100">
                         {log.result?.message ||
                           JSON.stringify(log.result) ||
                           log.error ||
