@@ -5,7 +5,8 @@ let transporter;
 function getTransporter() {
     if (transporter) return transporter;
     transporter = nodemailer.createTransport({
-        service: 'gmail',
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT,
         auth: process.env.SMTP_USER && process.env.SMTP_PASS ? {
             user: process.env.SMTP_USER,
             pass: process.env.SMTP_PASS,
@@ -17,7 +18,7 @@ function getTransporter() {
 async function sendEmail({ to, subject, html }) {
     try {
         const tx = getTransporter();
-        const from = process.env.MAIL_FROM || 'no-reply@swift-trucx.app';
+        const from = process.env.MAIL_FROM || 'info@swifttrucx.com';
         console.log("this the from", from)
         await tx.sendMail({ from, to, subject, html });
         console.log("Mail sending", from, to)

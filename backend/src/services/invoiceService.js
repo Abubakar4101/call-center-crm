@@ -69,7 +69,7 @@ function generateInvoiceHtml({
       max-width: 250px !important;
     }
     .logo-img {
-      max-width: 100% !important;
+      max-width: 45% !important;
       height: auto !important;
     }
     .invoice-details {
