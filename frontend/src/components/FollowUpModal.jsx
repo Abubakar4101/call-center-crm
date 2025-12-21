@@ -37,7 +37,7 @@ export default function FollowUpModal({ isOpen, onClose, contact }) {
 
         try {
             const leadData = {
-                contactName: contact.name || contact.Name || 'Customer',
+                contactName: contact["company name"] || contact["Company Name"] || contact.company_name || contact.name || 'Customer',
                 contactPhone: contact.phone || contact.Phone || contact.mobile || contact.Mobile || '',
                 contactEmail: contactEmail || 'no-email@example.com', // Use placeholder if no email
                 meetingDate: meetingDate.toISOString(),
@@ -111,7 +111,7 @@ export default function FollowUpModal({ isOpen, onClose, contact }) {
                                 <svg className="w-4 h-4 text-blue-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
-                                <span className="text-gray-100">{contact?.owner_name || contact?.name || contact?.Name || 'Customer'}</span>
+                                <span className="text-gray-100">{contact["company name"] || contact["Company Name"] || contact.company_name || contact.name || 'Customer'}</span>
                             </div>
                             <div className="flex items-center">
                                 <svg className="w-4 h-4 text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

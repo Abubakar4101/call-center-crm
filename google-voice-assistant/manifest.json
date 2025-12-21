@@ -2,16 +2,41 @@
   "name": "Google Voice Assistant",
   "version": "0.1.0",
   "description": "make your numbers file hanlding task easy....",
-  "permissions": ["storage", "tabs", "cookies"],
-  "host_permissions": ["https://voice.google.com/*", "http://localhost:5000/*", "https://*/api/*"],
+  "permissions": [
+    "storage",
+    "tabs",
+    "cookies"
+  ],
+  "host_permissions": [
+    "https://voice.google.com/*",
+    "http://localhost:5000/*",
+    "https://*/api/*",
+    "https://call-center-crm-eight.vercel.app/*"
+  ],
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": ["https://voice.google.com/*"],
-      "js": ["content-script.js"],
+      "matches": [
+        "https://voice.google.com/*"
+      ],
+      "js": [
+        "content-script.js"
+      ],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "http://localhost:*/*",
+        "https://localhost:*/*",
+        "http://127.0.0.1:*/*",
+        "https://call-center-crm-eight.vercel.app/*"
+      ],
+      "js": [
+        "bridge.js"
+      ],
+      "run_at": "document_start"
     }
   ],
   "web_accessible_resources": [
@@ -22,7 +47,9 @@
         "assets/delete.png",
         "assets/save.png"
       ],
-      "matches": ["https://voice.google.com/*"]
+      "matches": [
+        "https://voice.google.com/*"
+      ]
     }
   ],
   "action": {

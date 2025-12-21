@@ -36,7 +36,7 @@ function generateInvoiceHtml({
   const total = subtotal + taxAmount;
 
   // Logo URL - assuming backend is serving uploads or use a public URL if available
-  const logoUrl = `https://i.ibb.co/QF9jW6tg/swift-trucx-logo.png`;
+  const logoUrl = `https://call-center-crm-eight.vercel.app/web-logo-dark.jpeg`;
 
   return `
 <!DOCTYPE html>

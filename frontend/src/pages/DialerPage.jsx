@@ -67,7 +67,7 @@ export default function DialerPage() {
     if (!contact) return null;
 
     // Priority keys to check first
-    const priorityKeys = ['phone', 'mobile', 'number', 'cell', 'tel', 'contact', 'phone_number', 'mobile_number', 'cell_number'];
+    const priorityKeys = ['Phone', 'phone', 'mobile', 'number', 'cell', 'tel', 'contact', 'phone_number', 'mobile_number', 'cell_number'];
 
     // First, check priority keys
     for (const key of priorityKeys) {
@@ -104,14 +104,12 @@ export default function DialerPage() {
       const phoneNumber = parsePhoneNumber(strValue);
       if (phoneNumber && phoneNumber.isValid()) {
         // Return E.164 format or national number
-        console.log("I am in package", phoneNumber.number, phoneNumber.nationalNumber)
         return phoneNumber.number || phoneNumber.nationalNumber;
       }
     } catch (e) {
       // If parsing fails, it might be a local number without country code
       // Check if it looks like a phone number (has enough digits)
       const digitsOnly = strValue.replace(/\D+/g, "");
-      console.log("in catch", digitsOnly)
       // Phone numbers typically have 7-15 digits
       if (digitsOnly.length >= 7 && digitsOnly.length <= 15) {
         // Additional check: ensure the original value is mostly digits/phone chars
@@ -131,7 +129,9 @@ export default function DialerPage() {
     setLoadingContacts(true);
     try {
       const response = await apiService.loadContacts(selectedFileId);
+
       const loadedContacts = response.contacts || [];
+      normalizeArrayObjects(loadedContacts);
       setContacts(loadedContacts);
       setIndex(0);
       setCallLogs([]);
@@ -185,16 +185,17 @@ export default function DialerPage() {
       const token = localStorage.getItem("token") || "";
       const url = `https://voice.google.com/u/0/messages#autocall=${digitsOnly}&token=${encodeURIComponent(token)}`;
 
-      try {
-        window.open(url, "google-voice").focus();
-      } catch (e) {
-        console.error("Error opening Google Voice:", e);
-      }
+      // Send message to extension bridge
+      window.postMessage({
+        type: 'DIAL_GOOGLE_VOICE',
+        url: url
+      }, '*');
 
       setCallLogs((l) => [
         { contact, result: { message: "Opened Google Voice for auto-call" }, time: new Date().toISOString() },
         ...l,
       ]);
+      console.log("Call logs:", callLogs);
       // Record call made metric (non-blocking)
       apiService.incrementCallsMade().catch(() => { });
     } catch (err) {
@@ -212,7 +213,6 @@ export default function DialerPage() {
     setCalling(false);
     try {
       await apiService.stopDialing();
-      console.log("Dialing stopped");
     } catch (err) {
       console.warn(
         "stop request failed (maybe not implemented on server):",
@@ -231,6 +231,33 @@ export default function DialerPage() {
     setIndex(newIndex);
     localStorage.setItem('dialerIndex', newIndex.toString());
   }
+
+  function normalizeArrayObjects(arr) {
+    for (let i = 0; i < arr.length; i++) {
+      const obj = arr[i];
+
+      for (const key in obj) {
+        const trimmedKey = key.trim();
+        const normalizedKey = trimmedKey.toLowerCase();
+
+        // set normalized key
+        if (!(normalizedKey in obj)) {
+          obj[normalizedKey] = obj[key];
+        }
+
+        // trim string values
+        if (typeof obj[normalizedKey] === "string") {
+          obj[normalizedKey] = obj[normalizedKey].trim();
+        }
+
+        // remove old key
+        if (key !== normalizedKey) {
+          delete obj[key];
+        }
+      }
+    }
+  }
+
 
   const current = contacts[index] || null;
 
@@ -585,10 +612,10 @@ export default function DialerPage() {
                       </div>
                       <div className="flex-1">
                         <h4 className="text-lg font-semibold text-gray-100">
-                          {current.owner_name || current.name || "— (No name)"}
+                          {current["company name"] || current.company_name || current.name || "— (No name)"}
                         </h4>
                         <p className="text-blue-400 font-medium">
-                          {current.company_name || findPhoneNumber(current) || "— (No phone)"}
+                          {current["phone"] || findPhoneNumber(current) || "— (No phone)"}
                         </p>
                         <p className="text-sm text-gray-400 mt-1">
                           Contact {index + 1} of {contacts.length}
@@ -689,10 +716,16 @@ export default function DialerPage() {
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <h4 className="font-medium text-gray-100">
-                            {log.contact?.name ||
+                            {log.contact["company name"] ||
+                              log.contact["Company Name"] ||
+                              log.contact.company_name ||
+                              "Unknown Company"}
+                          </h4>
+                          <h6 className="font-medium text-gray-100">
+                            {log.contact?.phone ||
                               findPhoneNumber(log.contact) ||
                               "Unknown Contact"}
-                          </h4>
+                          </h6>
                           <p className="text-sm text-gray-400 mt-1">
                             {new Date(log.time).toLocaleString()}
                           </p>

@@ -31,7 +31,7 @@ function getEmailHeader(title) {
     return `
         <div class="header">
             <div class="logo-container">
-                <img src="https://i.ibb.co/QF9jW6tg/swift-trucx-logo.png" alt="Swift Trucx" class="logo" />
+                <img src="https://call-center-crm-eight.vercel.app/web-logo.png" alt="Swift Trucx" class="logo" />
             </div>
             <h1>${title}</h1>
         </div>
@@ -100,11 +100,11 @@ function getMeetingConfirmationEmailForScheduler(schedulerName, contactName, con
                         </div>
                     </div>
                     
-                    <p>You will receive a reminder 30 minutes before the scheduled meeting.</p>
+                    <p>You will receive a reminder before the scheduled meeting.</p>
                     <p>You can view all your scheduled meetings in the Leads tab of your CRM dashboard.</p>
                 </div>
                 <div class="footer">
-                    <img src="https://i.ibb.co/QF9jW6tg/swift-trucx-logo.png" alt="Swift Trucx" class="footer-logo" />
+                    <img src="https://call-center-crm-eight.vercel.app/web-logo.png" alt="Swift Trucx" class="footer-logo" />
                     <p>This is an automated message from Swift Trucx CRM</p>
                 </div>
             </div>
@@ -149,11 +149,11 @@ function getMeetingNotificationEmailForContact(contactName, schedulerName, sched
                         </div>
                     </div>
                     
-                    <p>You will receive a reminder 30 minutes before the scheduled meeting.</p>
+                    <p>You will receive a reminder before the scheduled meeting.</p>
                     <p>If you have any questions or need to reschedule, please contact ${schedulerName} at ${schedulerEmail}.</p>
                 </div>
                 <div class="footer">
-                    <img src="https://i.ibb.co/QF9jW6tg/swift-trucx-logo.png" alt="Swift Trucx" class="footer-logo" />
+                    <img src="https://call-center-crm-eight.vercel.app/web-logo.png" alt="Swift Trucx" class="footer-logo" />
                     <p>This is an automated message from Swift Trucx CRM</p>
                 </div>
             </div>
@@ -173,6 +173,12 @@ function getMeetingReminderEmail(recipientName, isScheduler, contactName, schedu
         minute: '2-digit'
     });
 
+    // Calculate actual remaining time
+    const now = new Date();
+    const meetingTime = new Date(meetingDate);
+    const diffMs = meetingTime - now;
+    const diffMinutes = Math.round(diffMs / 60000); // Convert to minutes
+
     const otherPartyName = isScheduler ? contactName : schedulerName;
 
     return `
@@ -188,7 +194,7 @@ function getMeetingReminderEmail(recipientName, isScheduler, contactName, schedu
                     <p>Hi ${recipientName},</p>
                     
                     <div class="reminder-box">
-                        <h2 style="margin-top: 0; color: #F59E0B;">Your meeting is in 30 minutes!</h2>
+                        <h2 style="margin-top: 0; color: #F59E0B;">Your meeting is in ${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''}!</h2>
                     </div>
                     
                     <p>This is a friendly reminder about your upcoming meeting:</p>
@@ -206,7 +212,7 @@ function getMeetingReminderEmail(recipientName, isScheduler, contactName, schedu
                     <p>Please make sure you're prepared for the meeting.</p>
                 </div>
                 <div class="footer">
-                    <img src="https://i.ibb.co/QF9jW6tg/swift-trucx-logo.png" alt="Swift Trucx" class="footer-logo" />
+                    <img src="https://call-center-crm-eight.vercel.app/web-logo.png" alt="Swift Trucx" class="footer-logo" />
                     <p>This is an automated reminder from Swift Trucx CRM</p>
                 </div>
             </div>
@@ -242,17 +248,23 @@ async function sendMeetingConfirmationEmails(schedulerName, schedulerEmail, cont
 // Send meeting reminder emails
 async function sendMeetingReminderEmails(schedulerName, schedulerEmail, contactName, contactPhone, contactEmail, meetingDate) {
     try {
+        // Calculate remaining minutes for subject line
+        const now = new Date();
+        const meetingTime = new Date(meetingDate);
+        const diffMs = meetingTime - now;
+        const diffMinutes = Math.round(diffMs / 60000);
+
         // Send reminder to scheduler
         await sendEmail({
             to: schedulerEmail,
-            subject: '⏰ Meeting Reminder - 30 Minutes',
+            subject: `⏰ Meeting Reminder - ${diffMinutes} Minute${diffMinutes !== 1 ? 's' : ''}`,
             html: getMeetingReminderEmail(schedulerName, true, contactName, schedulerName, contactPhone, meetingDate)
         });
 
         // Send reminder to contact person
         await sendEmail({
             to: contactEmail,
-            subject: '⏰ Meeting Reminder - 30 Minutes',
+            subject: `⏰ Meeting Reminder - ${diffMinutes} Minute${diffMinutes !== 1 ? 's' : ''}`,
             html: getMeetingReminderEmail(contactName, false, contactName, schedulerName, contactPhone, meetingDate)
         });
 

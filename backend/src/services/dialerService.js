@@ -75,9 +75,6 @@ async function loadDialerContacts(fileId) {
     id: idx + 1,
     // Preserve all original fields
     ...row,
-    // Ensure common fields are accessible with fallbacks
-    name: row.Name || row.name || "",
-    phone: row.Phone || row.phone || row.Mobile || row.mobile || "",
   }));
 
   return contacts;
