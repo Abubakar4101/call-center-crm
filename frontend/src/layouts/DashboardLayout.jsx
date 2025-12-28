@@ -594,7 +594,7 @@ export default function DashboardLayout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 lg:p-6 overflow-auto">
+        <main className="flex-1 p-4 lg:p-6 overflow-auto bg-[#0f172a]">
           <div className="animate-fade-in max-w-7xl mx-auto">
             <Outlet />
           </div>

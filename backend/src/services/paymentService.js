@@ -11,6 +11,7 @@ async function getTenantPayments(tenantId, { page = 1, limit = 20 } = {}) {
     const [totalItems, payments] = await Promise.all([
         Payment.countDocuments(query),
         Payment.find(query)
+            .populate('client', 'contactName contactEmail')
             .sort({ createdAt: -1 })
             .skip((currentPage - 1) * pageSize)
             .limit(pageSize)

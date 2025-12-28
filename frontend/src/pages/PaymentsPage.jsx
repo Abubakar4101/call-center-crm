@@ -140,70 +140,114 @@ export default function PaymentsPage() {
             Manage and track all payment transactions
           </p>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              const fetchData = async () => {
-                try {
-                  setLoading(true);
-                  const [{ payments: paymentList, pagination }, stats] = await Promise.all([
-                    apiService.getPayments({ page, limit: pageSize }),
-                    apiService.getDashboardStats(),
-                  ]);
-                  setPayments(paymentList || []);
-                  setTotalCount(stats.totalCount || pagination?.totalItems || 0);
-                  setTotalThisMonth(stats.totalThisMonth || 0);
-                  setTotalPages(pagination?.totalPages || 1);
-                  success("Payments refreshed successfully!");
-                } catch (err) {
-                  console.error("Failed to fetch payments:", err);
-                  error("Failed to refresh payments data");
-                } finally {
-                  setLoading(false);
-                }
-              };
-              fetchData();
-            }}
-            className="btn btn-secondary w-full sm:w-auto"
-          >
-            <svg
-              className="w-4 h-4 lg:w-5 lg:h-5 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        <div className="flex flex-wrap gap-2">
+          {/* Refresh Button */}
+          {/* <div className="relative group">
+            <button
+              onClick={() => {
+                fetchData().then(() => success("Payments refreshed successfully!"));
+              }}
+              className="btn btn-secondary w-full sm:w-auto"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            Refresh
-          </button>
-          <button
-            onClick={() => {
-              setPaymentFormData({ amount: "", title: "", customerEmail: "" });
-              setCheckoutLink("");
-              setShowPaymentModal(true);
-            }}
-            className="btn btn-primary w-full sm:w-auto"
-          >
-            <svg
-              className="w-4 h-4 lg:w-5 lg:h-5 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+              <svg
+                className="w-4 h-4 lg:w-5 lg:h-5 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+              Refresh
+            </button>
+          </div> */}
+
+          {/* Create Payment Button */}
+          <div className="relative group">
+            <button
+              onClick={() => {
+                setPaymentFormData({ amount: "", title: "", customerEmail: "" });
+                setCheckoutLink("");
+                setShowPaymentModal(true);
+              }}
+              className="btn btn-primary w-full sm:w-auto shadow-lg hover:shadow-xl transition-all"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-              />
-            </svg>
-            Create Payment
-          </button>
+              <svg
+                className="w-4 h-4 lg:w-5 lg:h-5 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
+              </svg>
+              Create Payment
+            </button>
+          </div>
+
+          {/* Excel Export */}
+          <div className="relative group">
+            <button
+              onClick={() => {
+                const url = `${apiService.baseURL}/payments/export/excel`;
+                const token = localStorage.getItem("token");
+                fetch(url, { headers: { 'Authorization': `Bearer ${token}` } })
+                  .then(res => res.blob())
+                  .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = "payments_export.xlsx";
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                  })
+                  .catch(() => error("Excel export failed"));
+              }}
+              className="btn btn-secondary w-full sm:w-auto"
+            >
+              <svg className="w-4 h-4 lg:w-5 lg:h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Excel
+            </button>
+          </div>
+
+          {/* PDF Report */}
+          <div className="relative group">
+            <button
+              onClick={() => {
+                const url = `${apiService.baseURL}/payments/export/pdf`;
+                const token = localStorage.getItem("token");
+                fetch(url, { headers: { 'Authorization': `Bearer ${token}` } })
+                  .then(res => res.blob())
+                  .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = "payments_report.pdf";
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                  })
+                  .catch(() => error("PDF export failed"));
+              }}
+              className="btn btn-secondary w-full sm:w-auto"
+            >
+              <svg className="w-4 h-4 lg:w-5 lg:h-5 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              PDF Report
+            </button>
+          </div>
         </div>
       </div>
 
@@ -371,11 +415,12 @@ export default function PaymentsPage() {
                 <thead>
                   <tr>
                     <th className="hidden sm:table-cell">Payment ID</th>
-                    <th>Customer</th>
+                    <th>Customer / Client</th>
                     <th>Amount</th>
-                    <th className="hidden md:table-cell">Currency</th>
+                    <th className="hidden md:table-cell">Method</th>
                     <th>Status</th>
                     <th className="hidden lg:table-cell">Date</th>
+                    <th>Receipt</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -386,24 +431,12 @@ export default function PaymentsPage() {
                         {p.stripePaymentId?.slice(0, 8)}...
                       </td>
                       <td>
-                        <div className="flex items-center">
-                          <div className="w-6 h-6 lg:w-8 lg:h-8 bg-gray-100 rounded-full flex items-center justify-center mr-2 lg:mr-3">
-                            <svg
-                              className="w-3 h-3 lg:w-4 lg:h-4 text-gray-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                              />
-                            </svg>
-                          </div>
-                          <span className="text-xs lg:text-sm truncate max-w-24 lg:max-w-none">
-                            {p.customer_email}
+                        <div className="flex flex-col">
+                          <span className="text-xs lg:text-sm font-medium text-gray-100">
+                            {p.client ? p.client.contactName : 'Guest'}
+                          </span>
+                          <span className="text-[10px] lg:text-xs text-gray-500 truncate max-w-24 lg:max-w-none">
+                            {p.customer_email || (p.client && p.client.contactEmail)}
                           </span>
                         </div>
                       </td>
@@ -412,7 +445,7 @@ export default function PaymentsPage() {
                       </td>
                       <td className="hidden md:table-cell">
                         <span className="badge badge-gray text-xs">
-                          {p.currency?.toUpperCase()}
+                          {(p.method || 'card').toUpperCase()}
                         </span>
                       </td>
                       <td>
@@ -429,46 +462,89 @@ export default function PaymentsPage() {
                       </td>
                       <td>
                         <div className="flex gap-1">
-                          <button
-                            onClick={() => handleCopyLink(p)}
-                            className="btn btn-secondary btn-sm text-xs"
-                            title="Copy Stripe payment link"
-                          >
-                            <svg
-                              className="w-3 h-3 lg:w-4 lg:h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
+                          <div className="relative group">
+                            <button
+                              disabled={p.status !== 'paid' && p.status !== 'succeeded'}
+                              onClick={() => {
+                                apiService.getReceipt(p._id)
+                                  .then(res => {
+                                    if (res.receipt?.receiptUrl) {
+                                      window.open(`${apiService.baseURL.replace('/api', '')}${res.receipt.receiptUrl}`, '_blank');
+                                    } else {
+                                      warning("Receipt not found. Try generating it.");
+                                    }
+                                  })
+                                  .catch(() => {
+                                    error("Failed to fetch receipt");
+                                  });
+                              }}
+                              className="btn btn-secondary btn-xs disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                              />
-                            </svg>
-                            <span className="hidden sm:inline ml-1">Copy</span>
-                          </button>
-                          <button
-                            onClick={() => handleDeletePayment(p._id)}
-                            className="btn btn-error btn-sm text-xs"
-                            title="Delete payment"
-                          >
-                            <svg
-                              className="w-3 h-3 lg:w-4 lg:h-4"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                              </svg>
+                            </button>
+
+                            {/* Fancy Tooltip */}
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-[10px] rounded shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-[100] border border-gray-700 transform scale-95 group-hover:scale-100">
+                              {p.status !== 'paid' && p.status !== 'succeeded' ? "Payment required for receipt" : "Download Receipt"}
+                              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="flex gap-1">
+                          <div className="relative group">
+                            <button
+                              onClick={() => handleCopyLink(p)}
+                              className="btn btn-secondary btn-sm text-xs"
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                            <span className="hidden sm:inline ml-1">Delete</span>
-                          </button>
+                              <svg
+                                className="w-3 h-3 lg:w-4 lg:h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                />
+                              </svg>
+                              <span className="hidden sm:inline ml-1">Copy</span>
+                            </button>
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-[10px] rounded shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-[100] border border-gray-700 transform scale-95 group-hover:scale-100">
+                              Copy Stripe Link
+                              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                            </div>
+                          </div>
+
+                          <div className="relative group">
+                            <button
+                              onClick={() => handleDeletePayment(p._id)}
+                              className="btn btn-secondary btn-sm text-xs text-red-600 hover:text-red-700 hover:bg-red-50 border-gray-200"
+                            >
+                              <svg
+                                className="w-3 h-3 lg:w-4 lg:h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
+                              </svg>
+                            </button>
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-[10px] rounded shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-[100] border border-gray-700 transform scale-95 group-hover:scale-100">
+                              Delete Payment
+                              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                            </div>
+                          </div>
                         </div>
                       </td>
                     </tr>

@@ -44,6 +44,7 @@ app.post(
 
 app.use(express.json());
 app.use("/assets/profile-pics", express.static(path.join(__dirname, "assets/profile-pics")));
+app.use("/assets/receipts", express.static(path.join(__dirname, "assets/receipts")));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.get('/api/health', (req, res) => {

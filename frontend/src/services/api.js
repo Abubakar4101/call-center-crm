@@ -141,6 +141,22 @@ class ApiService {
     return this.handleResponse(response);
   }
 
+  async getReceipt(paymentId) {
+    const response = await fetch(`${this.baseURL}/payments/receipt/${paymentId}`, {
+      method: "GET",
+      headers: this.getAuthHeaders(),
+    });
+    return this.handleResponse(response);
+  }
+
+  async generateManualReceipt(paymentId) {
+    const response = await fetch(`${this.baseURL}/payments/generate-receipt/${paymentId}`, {
+      method: "POST",
+      headers: this.getAuthHeaders(),
+    });
+    return this.handleResponse(response);
+  }
+
   // File APIs
   async getFiles() {
     const response = await fetch(`${this.baseURL}/files`, {

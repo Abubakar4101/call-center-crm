@@ -1,5 +1,7 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const Payment = require('../models/payment');
+const Lead = require('../models/lead');
+const { generateReceiptPDF } = require('./receiptService');
 
 
 async function createCheckoutSession({ tenantId, amount, currency, customer_email, title }) {
@@ -26,6 +28,9 @@ async function createCheckoutSession({ tenantId, amount, currency, customer_emai
         }
     });
 
+    // Try to find a lead with this email to link the payment
+    const lead = await Lead.findOne({ contactEmail: customer_email, tenant: tenantId });
+
     await Payment.create({
         tenant: tenantId,
         stripePaymentId: session.id,
@@ -33,6 +38,8 @@ async function createCheckoutSession({ tenantId, amount, currency, customer_emai
         currency: currency || 'usd',
         customer_email,
         status: session.payment_status || 'pending',
+        client: lead ? lead._id : null,
+        method: 'card',
         metadata: {
             ...session.metadata,
             checkout_url: session.url  // Store the Stripe checkout URL
@@ -52,7 +59,18 @@ async function handleStripeWebhook(event, io) {
             { status: 'paid' },
             { new: true }
         );
-        if (io) io.to(String(pay.tenant)).emit('payment.created', pay);
+
+        if (pay) {
+            // Generate receipt automatically
+            try {
+                await generateReceiptPDF(pay._id);
+                console.log(`Receipt generated for payment ${pay._id}`);
+            } catch (err) {
+                console.error(`Failed to auto-generate receipt for ${pay._id}:`, err);
+            }
+
+            if (io) io.to(String(pay.tenant)).emit('payment.created', pay);
+        }
     }
 }
 

@@ -9,6 +9,11 @@ const PaymentSchema = new mongoose.Schema({
     customer_email: { type: String },
     status: { type: String },
     metadata: { type: mongoose.Schema.Types.Mixed },
+    client: { type: mongoose.Schema.Types.ObjectId, ref: 'Lead' },
+    invoiceId: { type: String },
+    method: { type: String, default: 'card' },
+    receiptNo: { type: String },
+    addedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     createdAt: { type: Date, default: Date.now }
 });
 
