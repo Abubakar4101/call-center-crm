@@ -115,4 +115,4 @@ cron.schedule('*/5 * * * *', async () => {
 
 console.log('Meeting reminder cron job initialized');
 
-app.listen(process.env.PORT || 5000, () => console.log('Server started'));
+app.listen(process.env.PORT || 5000, '127.0.0.1', () => console.log('Server started'));
